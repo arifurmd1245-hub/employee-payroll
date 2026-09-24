@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0000ff">
+    <meta name="description" content="Simple Employee Payroll App">
+    <link rel="manifest" href="manifest.json">
+    <title>Employee Payroll App</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="salary-box">
+    <h1>Employee Payroll</h1>
+
+    <label>Employee Name</label>
+    <input type="text" id="employee" placeholder="কর্মচারীর নাম">
+
+    <label>Salary Month</label>
+    <input type="month" id="month">
+
+    <label>Basic Salary</label>
+    <input type="number" id="basic">
+
+    <label>Overtime</label>
+    <input type="number" id="overtime">
+
+    <label>Bonus</label>
+    <input type="number" id="bonus">
+
+    <label>Deduction</label>
+    <input type="number" id="deduction">
+
+    <button onclick="saveEmployee()" id="saveButton">Save Employee</button>
+
+    <hr>
+
+    <h2>Employee Search</h2>
+    <input type="text" id="search" placeholder="নাম দিয়ে খুঁজুন..." oninput="showEmployees()">
+
+    <div class="total-box">
+        Total Salary:
+        <strong><span id="totalSalary">0</span> টাকা</strong>
+    </div>
+
+    <h2>Employee List</h2>
+    <div id="employeeList"></div>
+</div>
+
+<script src="script.js"></script>
+<script>
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+        navigator.serviceWorker.register("service-worker.js");
+    });
+}
+</script>
+</body>
+</html>

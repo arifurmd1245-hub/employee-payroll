@@ -1,0 +1,72 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: lightblue;
+}
+
+.salary-box {
+    width: 90%;
+    max-width: 500px;
+    margin: 30px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+}
+
+h1 { text-align: center; color: blue; }
+label { display: block; margin-top: 12px; font-weight: bold; }
+
+input {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+button {
+    width: 100%;
+    margin-top: 20px;
+    padding: 12px;
+    background: blue;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+h2 { margin-top: 25px; }
+
+.employee-card {
+    margin-top: 15px;
+    padding: 15px;
+    background: #eef6ff;
+    border-radius: 10px;
+}
+
+.delete-btn { background: red; margin-top: 10px; }
+.edit-btn { background: orange; margin-top: 10px; }
+.print-btn { background: green; margin-top: 10px; }
+
+.total-box {
+    margin-top: 20px;
+    padding: 15px;
+    background: #e8f5e9;
+    border-radius: 10px;
+    text-align: center;
+    font-size: 18px;
+}
+
+.total-box strong {
+    display: block;
+    margin-top: 8px;
+    font-size: 24px;
+}
+
+hr {
+    margin-top: 30px;
+    border: none;
+    border-top: 1px solid #ddd;
+}

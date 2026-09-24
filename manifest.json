@@ -1,0 +1,10 @@
+{
+  "name": "Employee Payroll App",
+  "short_name": "Payroll",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0000ff",
+  "description": "Simple Employee Payroll App",
+  "icons": []
+}
