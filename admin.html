@@ -3,10 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Smart Order - Admin</title>
 
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
 <style>
-*{box-sizing:border-box}
+*{
+  box-sizing:border-box;
+}
 
 body{
   margin:0;
@@ -16,28 +22,34 @@ body{
 }
 
 .container{
-  max-width:700px;
+  max-width:800px;
   margin:auto;
   padding:20px;
 }
 
 h1{
   text-align:center;
-  margin-bottom:20px;
+  margin-bottom:25px;
 }
 
-.top{
+.dashboard{
   background:#111;
   color:white;
-  padding:18px;
-  border-radius:14px;
-  margin-bottom:20px;
+  border-radius:18px;
+  padding:22px;
+  margin-bottom:25px;
+}
+
+.count{
+  font-size:24px;
+  font-weight:bold;
+  margin-bottom:15px;
 }
 
 button{
   border:0;
   border-radius:10px;
-  padding:12px 18px;
+  padding:13px 18px;
   font-size:16px;
   cursor:pointer;
 }
@@ -45,38 +57,64 @@ button{
 .refresh{
   background:white;
   color:#111;
-  margin-top:10px;
 }
 
 .order{
   background:white;
-  border-radius:15px;
-  padding:18px;
-  margin-bottom:15px;
-  box-shadow:0 2px 8px rgba(0,0,0,.08);
+  border-radius:18px;
+  padding:20px;
+  margin-bottom:20px;
+  box-shadow:0 4px 15px rgba(0,0,0,.08);
 }
 
-.order h3{
+.order h2{
   margin-top:0;
+  margin-bottom:20px;
 }
 
 .row{
-  margin:8px 0;
+  margin:12px 0;
+  font-size:17px;
+  word-break:break-word;
+}
+
+.row b{
+  display:inline-block;
+  min-width:100px;
 }
 
 .status{
   display:inline-block;
-  background:#fff3cd;
-  padding:6px 10px;
+  background:#fff0b8;
+  padding:8px 12px;
   border-radius:8px;
-  margin-top:8px;
+  font-weight:bold;
+}
+
+select{
+  padding:10px;
+  border-radius:8px;
+  border:1px solid #ccc;
+  font-size:16px;
+}
+
+.delete{
+  background:#e53935;
+  color:white;
+  margin-top:15px;
 }
 
 .empty{
+  background:white;
+  padding:30px;
+  border-radius:15px;
+  text-align:center;
+  font-size:18px;
+}
+
+.loading{
   text-align:center;
   padding:30px;
-  background:white;
-  border-radius:15px;
 }
 </style>
 </head>
@@ -87,51 +125,100 @@ button{
 
 <h1>📦 Smart Order Admin</h1>
 
-<div class="top">
-  <div>মোট অর্ডার: <b id="count">0</b></div>
-  <button class="refresh" onclick="loadOrders()">🔄 অর্ডার রিফ্রেশ করুন</button>
+<div class="dashboard">
+  <div class="count">
+    মোট অর্ডার: <span id="totalOrders">0</span>
+  </div>
+
+  <button class="refresh" onclick="loadOrders()">
+    🔄 অর্ডার রিফ্রেশ করুন
+  </button>
 </div>
 
 <div id="orders">
-  <div class="empty">অর্ডার লোড হচ্ছে...</div>
+  <div class="loading">অর্ডার লোড হচ্ছে...</div>
 </div>
 
 </div>
 
 <script>
 
-const databaseURL =
-"https://smart-order-a4fc2-default-rtdb.firebaseio.com";
+const firebaseConfig = {
+  apiKey: "AIzaSyCe33RiZ0fdmB78uQz03-Y3pWmLy9GDORA",
+  authDomain: "smart-order-a4fc2.firebaseapp.com",
+  databaseURL: "https://smart-order-a4fc2-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "smart-order-a4fc2",
+  storageBucket: "smart-order-a4fc2.firebasestorage.app",
+  messagingSenderId: "74381950217",
+  appId: "1:74381950217:web:54f82681d2f6869bb367d8",
+  measurementId: "G-L0L5PFY1DM"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const database = firebase.database();
 
 function loadOrders(){
 
   const box = document.getElementById("orders");
 
-  box.innerHTML =
-  '<div class="empty">অর্ডার লোড হচ্ছে...</div>';
+  box.innerHTML = `
+    <div class="loading">
+      ⏳ অর্ডার লোড হচ্ছে...
+    </div>
+  `;
 
-  fetch(databaseURL + "/orders.json")
-  .then(response => response.json())
-  .then(data => {
+  database.ref("orders").once("value")
+  .then(function(snapshot){
+
+    const data = snapshot.val();
 
     box.innerHTML = "";
 
     if(!data){
 
-      document.getElementById("count").innerText = "0";
+      document.getElementById("totalOrders").innerText = "0";
 
-      box.innerHTML =
-      '<div class="empty">এখনো কোনো অর্ডার নেই।</div>';
+      box.innerHTML = `
+        <div class="empty">
+          📭 এখনো কোনো অর্ডার পাওয়া যায়নি।
+        </div>
+      `;
 
       return;
     }
 
     const orders = Object.entries(data).reverse();
 
-    document.getElementById("count").innerText =
-      orders.length;
+    document.getElementById("totalOrders").innerText = orders.length;
 
-    orders.forEach(([id, order]) => {
+    orders.forEach(function(item){
+
+      const id = item[0];
+      const order = item[1] || {};
+
+      const name = order.name || "দেওয়া হয়নি";
+      const phone = order.phone || "দেওয়া হয়নি";
+      const address = order.address || "দেওয়া হয়নি";
+      const quantity = order.quantity || 1;
+      const productPrice = order.productPrice || 500;
+      const shipping = order.shipping || 0;
+
+      let total = order.total;
+
+      if(total === undefined || total === null || total === ""){
+        total = Number(productPrice) * Number(quantity) + Number(shipping);
+      }
+
+      let orderTime = order.orderTime || "";
+
+      if(orderTime){
+        try{
+          orderTime = new Date(orderTime).toLocaleString("bn-BD");
+        }catch(e){}
+      }
+
+      const status = order.status || "New";
 
       const div = document.createElement("div");
 
@@ -139,46 +226,69 @@ function loadOrders(){
 
       div.innerHTML = `
 
-        <h3>🛍️ অর্ডার</h3>
+        <h2>🛍️ অর্ডার</h2>
 
         <div class="row">
-          <b>নাম:</b>
-          ${order.name || ""}
-        </div>
-
-        <div class="row">
-          <b>মোবাইল:</b>
-          ${order.phone || ""}
+          <b>নাম:</b> ${escapeHTML(name)}
         </div>
 
         <div class="row">
-          <b>ঠিকানা:</b>
-          ${order.address || ""}
+          <b>মোবাইল:</b> ${escapeHTML(phone)}
         </div>
 
         <div class="row">
-          <b>Quantity:</b>
-          ${order.quantity || 1}
+          <b>ঠিকানা:</b> ${escapeHTML(address)}
         </div>
 
         <div class="row">
-          <b>Product:</b>
-          ৳${order.productPrice || 500}
+          <b>Quantity:</b> ${escapeHTML(quantity)}
         </div>
 
         <div class="row">
-          <b>মোট:</b>
-          ৳${order.total || ""}
+          <b>Product:</b> ৳${escapeHTML(productPrice)}
         </div>
 
         <div class="row">
-          <b>Order Time:</b>
-          ${order.orderTime || ""}
+          <b>Shipping:</b> ৳${escapeHTML(shipping)}
         </div>
 
-        <div class="status">
-          Status: ${order.status || "New"}
+        <div class="row">
+          <b>মোট:</b> <strong>৳${escapeHTML(total)}</strong>
         </div>
+
+        <div class="row">
+          <b>Order Time:</b> ${escapeHTML(orderTime)}
+        </div>
+
+        <div class="row">
+          <b>Status:</b>
+
+          <select onchange="changeStatus('${id}', this.value)">
+            <option value="New" ${status === "New" ? "selected" : ""}>
+              New
+            </option>
+
+            <option value="Confirmed" ${status === "Confirmed" ? "selected" : ""}>
+              Confirmed
+            </option>
+
+            <option value="Processing" ${status === "Processing" ? "selected" : ""}>
+              Processing
+            </option>
+
+            <option value="Delivered" ${status === "Delivered" ? "selected" : ""}>
+              Delivered
+            </option>
+
+            <option value="Cancelled" ${status === "Cancelled" ? "selected" : ""}>
+              Cancelled
+            </option>
+          </select>
+        </div>
+
+        <button class="delete" onclick="deleteOrder('${id}')">
+          🗑️ অর্ডার মুছে ফেলুন
+        </button>
 
       `;
 
@@ -187,18 +297,76 @@ function loadOrders(){
     });
 
   })
-  .catch(error => {
+  .catch(function(error){
 
     box.innerHTML = `
       <div class="empty">
         ❌ অর্ডার লোড করা যাচ্ছে না।<br><br>
-        ${error.message}
+        ${escapeHTML(error.message)}
       </div>
     `;
 
   });
 
 }
+
+
+function changeStatus(id,status){
+
+  database.ref("orders/" + id).update({
+    status: status
+  })
+  .then(function(){
+    alert("স্ট্যাটাস পরিবর্তন হয়েছে ✅");
+  })
+  .catch(function(error){
+    alert("স্ট্যাটাস পরিবর্তন হয়নি!\n\n" + error.message);
+  });
+
+}
+
+
+function deleteOrder(id){
+
+  const confirmDelete = confirm(
+    "আপনি কি এই অর্ডারটি মুছে ফেলতে চান?"
+  );
+
+  if(!confirmDelete){
+    return;
+  }
+
+  database.ref("orders/" + id).remove()
+  .then(function(){
+
+    alert("অর্ডার মুছে ফেলা হয়েছে ✅");
+
+    loadOrders();
+
+  })
+  .catch(function(error){
+
+    alert(
+      "অর্ডার মুছে ফেলা যায়নি!\n\n" +
+      error.message
+    );
+
+  });
+
+}
+
+
+function escapeHTML(value){
+
+  return String(value)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+
+}
+
 
 loadOrders();
 
