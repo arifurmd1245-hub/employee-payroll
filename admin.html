@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Order - Admin</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#f5f6fa;
+  color:#111;
+}
+
+.container{
+  max-width:700px;
+  margin:auto;
+  padding:20px;
+}
+
+h1{
+  text-align:center;
+  margin-bottom:20px;
+}
+
+.top{
+  background:#111;
+  color:white;
+  padding:18px;
+  border-radius:14px;
+  margin-bottom:20px;
+}
+
+button{
+  border:0;
+  border-radius:10px;
+  padding:12px 18px;
+  font-size:16px;
+  cursor:pointer;
+}
+
+.refresh{
+  background:white;
+  color:#111;
+  margin-top:10px;
+}
+
+.order{
+  background:white;
+  border-radius:15px;
+  padding:18px;
+  margin-bottom:15px;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);
+}
+
+.order h3{
+  margin-top:0;
+}
+
+.row{
+  margin:8px 0;
+}
+
+.status{
+  display:inline-block;
+  background:#fff3cd;
+  padding:6px 10px;
+  border-radius:8px;
+  margin-top:8px;
+}
+
+.empty{
+  text-align:center;
+  padding:30px;
+  background:white;
+  border-radius:15px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>📦 Smart Order Admin</h1>
+
+<div class="top">
+  <div>মোট অর্ডার: <b id="count">0</b></div>
+  <button class="refresh" onclick="loadOrders()">🔄 অর্ডার রিফ্রেশ করুন</button>
+</div>
+
+<div id="orders">
+  <div class="empty">অর্ডার লোড হচ্ছে...</div>
+</div>
+
+</div>
+
+<script>
+
+const databaseURL =
+"https://smart-order-a4fc2-default-rtdb.firebaseio.com";
+
+function loadOrders(){
+
+  const box = document.getElementById("orders");
+
+  box.innerHTML =
+  '<div class="empty">অর্ডার লোড হচ্ছে...</div>';
+
+  fetch(databaseURL + "/orders.json")
+  .then(response => response.json())
+  .then(data => {
+
+    box.innerHTML = "";
+
+    if(!data){
+
+      document.getElementById("count").innerText = "0";
+
+      box.innerHTML =
+      '<div class="empty">এখনো কোনো অর্ডার নেই।</div>';
+
+      return;
+    }
+
+    const orders = Object.entries(data).reverse();
+
+    document.getElementById("count").innerText =
+      orders.length;
+
+    orders.forEach(([id, order]) => {
+
+      const div = document.createElement("div");
+
+      div.className = "order";
+
+      div.innerHTML = `
+
+        <h3>🛍️ অর্ডার</h3>
+
+        <div class="row">
+          <b>নাম:</b>
+          ${order.name || ""}
+        </div>
+
+        <div class="row">
+          <b>মোবাইল:</b>
+          ${order.phone || ""}
+        </div>
+
+        <div class="row">
+          <b>ঠিকানা:</b>
+          ${order.address || ""}
+        </div>
+
+        <div class="row">
+          <b>Quantity:</b>
+          ${order.quantity || 1}
+        </div>
+
+        <div class="row">
+          <b>Product:</b>
+          ৳${order.productPrice || 500}
+        </div>
+
+        <div class="row">
+          <b>মোট:</b>
+          ৳${order.total || ""}
+        </div>
+
+        <div class="row">
+          <b>Order Time:</b>
+          ${order.orderTime || ""}
+        </div>
+
+        <div class="status">
+          Status: ${order.status || "New"}
+        </div>
+
+      `;
+
+      box.appendChild(div);
+
+    });
+
+  })
+  .catch(error => {
+
+    box.innerHTML = `
+      <div class="empty">
+        ❌ অর্ডার লোড করা যাচ্ছে না।<br><br>
+        ${error.message}
+      </div>
+    `;
+
+  });
+
+}
+
+loadOrders();
+
+</script>
+
+</body>
+</html>
