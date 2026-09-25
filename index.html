@@ -1,59 +1,252 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#0000ff">
-    <meta name="description" content="Simple Employee Payroll App">
-    <link rel="manifest" href="manifest.json">
-    <title>Employee Payroll App</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Smart Order</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f5f6fa;
+}
+
+.container {
+  max-width: 500px;
+  margin: auto;
+  background: white;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.product {
+  text-align: center;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.product img {
+  width: 100%;
+  max-width: 280px;
+  border-radius: 10px;
+}
+
+.price {
+  font-size: 22px;
+  font-weight: bold;
+}
+
+label {
+  display: block;
+  margin-top: 12px;
+  font-weight: bold;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 12px;
+  margin-top: 6px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+textarea {
+  min-height: 90px;
+}
+
+.total {
+  background: #f1f2f6;
+  padding: 15px;
+  border-radius: 10px;
+  margin-top: 20px;
+}
+
+.total p {
+  display: flex;
+  justify-content: space-between;
+}
+
+.total h2 {
+  display: flex;
+  justify-content: space-between;
+}
+
+.order-btn {
+  width: 100%;
+  padding: 15px;
+  margin-top: 15px;
+  border: none;
+  border-radius: 8px;
+  background: #111;
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+}
+</style>
 </head>
+
 <body>
-<div class="salary-box">
-    <h1>Employee Payroll</h1>
 
-    <label>Employee Name</label>
-    <input type="text" id="employee" placeholder="কর্মচারীর নাম">
+<div class="container">
 
-    <label>Salary Month</label>
-    <input type="month" id="month">
+<h1>🛍️ Smart Order</h1>
 
-    <label>Basic Salary</label>
-    <input type="number" id="basic">
+<div class="product">
 
-    <label>Overtime</label>
-    <input type="number" id="overtime">
+  <img src="https://via.placeholder.com/300" alt="Product">
 
-    <label>Bonus</label>
-    <input type="number" id="bonus">
+  <h2>Premium T-Shirt</h2>
 
-    <label>Deduction</label>
-    <input type="number" id="deduction">
+  <p class="price">৳500</p>
 
-    <button onclick="saveEmployee()" id="saveButton">Save Employee</button>
-
-    <hr>
-
-    <h2>Employee Search</h2>
-    <input type="text" id="search" placeholder="নাম দিয়ে খুঁজুন..." oninput="showEmployees()">
-
-    <div class="total-box">
-        Total Salary:
-        <strong><span id="totalSalary">0</span> টাকা</strong>
-    </div>
-
-    <h2>Employee List</h2>
-    <div id="employeeList"></div>
 </div>
 
-<script src="script.js"></script>
+<label>Quantity</label>
+
+<input
+  type="number"
+  id="quantity"
+  value="1"
+  min="1"
+  onchange="calculateTotal()"
+>
+
+<label>Delivery Area</label>
+
+<select id="area" onchange="calculateTotal()">
+
+  <option value="70">
+    ঢাকা শহর - ৳70
+  </option>
+
+  <option value="120">
+    ঢাকার বাইরে - ৳120
+  </option>
+
+</select>
+
+<label>আপনার নাম</label>
+
+<input
+  type="text"
+  id="name"
+  placeholder="আপনার নাম"
+>
+
+<label>মোবাইল নম্বর</label>
+
+<input
+  type="tel"
+  id="phone"
+  placeholder="01XXXXXXXXX"
+>
+
+<label>সম্পূর্ণ ঠিকানা</label>
+
+<textarea
+  id="address"
+  placeholder="আপনার সম্পূর্ণ ঠিকানা লিখুন"
+></textarea>
+
+<div class="total">
+
+  <p>
+    <span>Product:</span>
+    <span>৳<span id="productTotal">500</span></span>
+  </p>
+
+  <p>
+    <span>Shipping:</span>
+    <span>৳<span id="shipping">70</span></span>
+  </p>
+
+  <hr>
+
+  <h2>
+    <span>Total:</span>
+    <span>৳<span id="total">570</span></span>
+  </h2>
+
+</div>
+
+<button class="order-btn" onclick="placeOrder()">
+  অর্ডার করুন
+</button>
+
+</div>
+
 <script>
-if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-        navigator.serviceWorker.register("service-worker.js");
-    });
+
+const productPrice = 500;
+
+function calculateTotal() {
+
+  const quantity =
+    Number(document.getElementById("quantity").value);
+
+  const shipping =
+    Number(document.getElementById("area").value);
+
+  const productTotal =
+    productPrice * quantity;
+
+  const total =
+    productTotal + shipping;
+
+  document.getElementById("productTotal").innerText =
+    productTotal;
+
+  document.getElementById("shipping").innerText =
+    shipping;
+
+  document.getElementById("total").innerText =
+    total;
 }
+
+function placeOrder() {
+
+  const name =
+    document.getElementById("name").value.trim();
+
+  const phone =
+    document.getElementById("phone").value.trim();
+
+  const address =
+    document.getElementById("address").value.trim();
+
+  if (!name || !phone || !address) {
+
+    alert("দয়া করে নাম, মোবাইল এবং ঠিকানা পূরণ করুন।");
+
+    return;
+  }
+
+  alert(
+    "অর্ডার সফলভাবে গ্রহণ করা হয়েছে!\\n\\n" +
+    "নাম: " + name + "\\n" +
+    "মোবাইল: " + phone
+  );
+}
+
+calculateTotal();
+
 </script>
+
 </body>
-</html>
+    </html>
