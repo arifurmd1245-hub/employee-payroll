@@ -238,7 +238,7 @@ function loadOrders(){
       const id = item[0];
       const order = item[1] || {};
 
-      const name = order.name || "";
+      const name = order.customerName || order.name || "";
       const phone = order.phone || "";
       const address = order.address || "";
       const quantity = order.quantity || 1;
