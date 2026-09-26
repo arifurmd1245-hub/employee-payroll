@@ -6,12 +6,16 @@
 <title>Smart Order</title>
 
 <style>
-*{box-sizing:border-box}
+*{
+  box-sizing:border-box;
+}
+
 body{
   margin:0;
   font-family:Arial,sans-serif;
   background:#f5f6fa;
 }
+
 .container{
   max-width:500px;
   margin:auto;
@@ -19,7 +23,38 @@ body{
   min-height:100vh;
   padding:20px;
 }
-h1{text-align:center;margin-bottom:20px}
+
+h1{
+  text-align:center;
+  margin-bottom:10px;
+}
+
+.subtitle{
+  text-align:center;
+  color:#666;
+  margin-bottom:20px;
+}
+
+/* ORDER NOW BUTTON */
+.order-now-btn{
+  display:block;
+  width:100%;
+  padding:17px;
+  margin:10px 0 25px;
+  background:#111827;
+  color:white;
+  text-align:center;
+  text-decoration:none;
+  font-size:21px;
+  font-weight:bold;
+  border-radius:12px;
+  box-shadow:0 4px 10px rgba(0,0,0,.18);
+}
+
+.order-now-btn:active{
+  transform:scale(.98);
+}
+
 .product{
   text-align:center;
   border:1px solid #ddd;
@@ -27,20 +62,24 @@ h1{text-align:center;margin-bottom:20px}
   padding:15px;
   margin-bottom:20px;
 }
+
 .product img{
   width:100%;
   max-width:280px;
   border-radius:10px;
 }
+
 .price{
   font-size:22px;
   font-weight:bold;
 }
+
 label{
   display:block;
   margin-top:12px;
   font-weight:bold;
 }
+
 input,select,textarea{
   width:100%;
   padding:12px;
@@ -49,17 +88,24 @@ input,select,textarea{
   border-radius:8px;
   font-size:16px;
 }
-textarea{min-height:90px}
+
+textarea{
+  min-height:90px;
+}
+
 .total{
   background:#f1f2f6;
   padding:15px;
   border-radius:10px;
   margin-top:20px;
 }
-.total p,.total h2{
+
+.total p,
+.total h2{
   display:flex;
   justify-content:space-between;
 }
+
 .order-btn{
   width:100%;
   padding:15px;
@@ -80,32 +126,76 @@ textarea{min-height:90px}
 
 <h1>🛍️ Smart Order</h1>
 
+<p class="subtitle">
+সহজে অর্ডার করুন
+</p>
+
+<!-- BIG ORDER NOW BUTTON -->
+<a href="#order-section" class="order-now-btn">
+🛒 ORDER NOW
+</a>
+
 <div class="product">
+
 <img src="https://via.placeholder.com/300" alt="Product">
+
 <h2>Premium T-Shirt</h2>
+
 <p class="price">৳500</p>
+
 </div>
 
+<div id="order-section">
+
 <label>Quantity</label>
-<input type="number" id="quantity" value="1" min="1"
-onchange="calculateTotal()">
+
+<input
+type="number"
+id="quantity"
+value="1"
+min="1"
+onchange="calculateTotal()"
+>
 
 <label>Delivery Area</label>
+
 <select id="area" onchange="calculateTotal()">
-<option value="70">ঢাকা শহর - ৳70</option>
-<option value="120">ঢাকার বাইরে - ৳120</option>
+
+<option value="70">
+ঢাকা শহর - ৳70
+</option>
+
+<option value="120">
+ঢাকার বাইরে - ৳120
+</option>
+
 </select>
 
 <label>আপনার নাম</label>
-<input type="text" id="name" placeholder="আপনার নাম">
+
+<input
+type="text"
+id="name"
+placeholder="আপনার নাম"
+>
 
 <label>মোবাইল নম্বর</label>
-<input type="tel" id="phone" placeholder="01XXXXXXXXX">
+
+<input
+type="tel"
+id="phone"
+placeholder="01XXXXXXXXX"
+>
 
 <label>সম্পূর্ণ ঠিকানা</label>
-<textarea id="address" placeholder="আপনার সম্পূর্ণ ঠিকানা লিখুন"></textarea>
+
+<textarea
+id="address"
+placeholder="আপনার সম্পূর্ণ ঠিকানা লিখুন"
+></textarea>
 
 <div class="total">
+
 <p>
 <span>Product:</span>
 <span>৳<span id="productTotal">500</span></span>
@@ -122,29 +212,47 @@ onchange="calculateTotal()">
 <span>Total:</span>
 <span>৳<span id="total">570</span></span>
 </h2>
+
 </div>
 
-<button class="order-btn" onclick="placeOrder()">
+<button
+class="order-btn"
+onclick="placeOrder()"
+>
 অর্ডার করুন
 </button>
 
 </div>
 
+</div>
+
+
 <!-- Firebase -->
+
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
 <script>
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCe33RiZ0fdmB78uQz03-Y3pWmLy9GD0RA",
-  authDomain: "smart-order-a4fc2.firebaseapp.com",
-  databaseURL: "https://smart-order-a4fc2-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "smart-order-a4fc2",
-  storageBucket: "smart-order-a4fc2.firebasestorage.app",
-  messagingSenderId: "74381950217",
-  appId: "1:74381950217:web:54f82681d2f6869bb367d8",
-  measurementId: "G-L0L5PFY1DM"
+
+apiKey: "AIzaSyCe33RiZ0fdmB78uQz03-Y3pWmLy9GD0RA",
+
+authDomain: "smart-order-a4fc2.firebaseapp.com",
+
+databaseURL: "https://smart-order-a4fc2-default-rtdb.asia-southeast1.firebasedatabase.app",
+
+projectId: "smart-order-a4fc2",
+
+storageBucket: "smart-order-a4fc2.firebasestorage.app",
+
+messagingSenderId: "74381950217",
+
+appId: "1:74381950217:web:54f82681d2f6869bb367d8",
+
+measurementId: "G-L0L5PFY1DM"
+
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -153,124 +261,146 @@ const database = firebase.database();
 
 const productPrice = 500;
 
+
 function calculateTotal(){
 
-  const quantity =
-    Number(document.getElementById("quantity").value);
+const quantity =
+Number(document.getElementById("quantity").value);
 
-  const shipping =
-    Number(document.getElementById("area").value);
+const shipping =
+Number(document.getElementById("area").value);
 
-  const productTotal =
-    productPrice * quantity;
+const productTotal =
+productPrice * quantity;
 
-  const total =
-    productTotal + shipping;
+const total =
+productTotal + shipping;
 
-  document.getElementById("productTotal").innerText =
-    productTotal;
+document.getElementById("productTotal").innerText =
+productTotal;
 
-  document.getElementById("shipping").innerText =
-    shipping;
+document.getElementById("shipping").innerText =
+shipping;
 
-  document.getElementById("total").innerText =
-    total;
+document.getElementById("total").innerText =
+total;
+
 }
+
 
 function placeOrder(){
 
-  const name =
-    document.getElementById("name").value.trim();
+const name =
+document.getElementById("name").value.trim();
 
-  const phone =
-    document.getElementById("phone").value.trim();
+const phone =
+document.getElementById("phone").value.trim();
 
-  const address =
-    document.getElementById("address").value.trim();
+const address =
+document.getElementById("address").value.trim();
 
-  const quantity =
-    Number(document.getElementById("quantity").value);
+const quantity =
+Number(document.getElementById("quantity").value);
 
-  const area =
-    document.getElementById("area");
+const area =
+document.getElementById("area");
 
-  const shipping =
-    Number(area.value);
+const shipping =
+Number(area.value);
 
-  const areaName =
-    area.options[area.selectedIndex].text;
+const areaName =
+area.options[area.selectedIndex].text;
 
-  const productTotal =
-    productPrice * quantity;
+const productTotal =
+productPrice * quantity;
 
-  const total =
-    productTotal + shipping;
+const total =
+productTotal + shipping;
 
-  if(!name || !phone || !address){
 
-    alert("দয়া করে নাম, মোবাইল এবং ঠিকানা পূরণ করুন।");
+if(!name || !phone || !address){
 
-    return;
-  }
+alert(
+"দয়া করে নাম, মোবাইল এবং ঠিকানা পূরণ করুন।"
+);
 
-  const order = {
-
-    product: "Premium T-Shirt",
-
-    price: productPrice,
-
-    quantity: quantity,
-
-    deliveryArea: areaName,
-
-    shipping: shipping,
-
-    productTotal: productTotal,
-
-    total: total,
-
-    customerName: name,
-
-    phone: phone,
-
-    address: address,
-
-    orderTime: new Date().toISOString(),
-
-    status: "New"
-
-  };
-
-  database.ref("orders").push(order)
-
-  .then(function(){
-
-    alert(
-      "অর্ডার সফলভাবে গ্রহণ করা হয়েছে! 🎉\n\n" +
-      "নাম: " + name + "\n" +
-      "মোবাইল: " + phone + "\n" +
-      "মোট: ৳" + total
-    );
-
-    document.getElementById("name").value = "";
-    document.getElementById("phone").value = "";
-    document.getElementById("address").value = "";
-    document.getElementById("quantity").value = 1;
-
-    calculateTotal();
-
-  })
-
-  .catch(function(error){
-
-    alert(
-      "Order save হয়নি।\n\n" +
-      error.message
-    );
-
-  });
+return;
 
 }
+
+
+const order = {
+
+product:"Premium T-Shirt",
+
+price:productPrice,
+
+quantity:quantity,
+
+deliveryArea:areaName,
+
+shipping:shipping,
+
+productTotal:productTotal,
+
+total:total,
+
+customerName:name,
+
+phone:phone,
+
+address:address,
+
+orderTime:new Date().toISOString(),
+
+status:"New"
+
+};
+
+
+database.ref("orders").push(order)
+
+.then(function(){
+
+alert(
+
+"অর্ডার সফলভাবে গ্রহণ করা হয়েছে! 🎉\n\n" +
+
+"নাম: " + name + "\n" +
+
+"মোবাইল: " + phone + "\n" +
+
+"মোট: ৳" + total
+
+);
+
+
+document.getElementById("name").value = "";
+
+document.getElementById("phone").value = "";
+
+document.getElementById("address").value = "";
+
+document.getElementById("quantity").value = 1;
+
+calculateTotal();
+
+})
+
+.catch(function(error){
+
+alert(
+
+"Order save হয়নি।\n\n" +
+
+error.message
+
+);
+
+});
+
+}
+
 
 calculateTotal();
 
