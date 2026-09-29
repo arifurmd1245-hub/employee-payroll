@@ -1,139 +1,521 @@
-let employees = JSON.parse(localStorage.getItem("employees")) || [];
-let editIndex = -1;
+const KEY = "afh_v3_data";
 
-showEmployees();
+const defaultData = {
+  settings: {
+    brand: "Arif Fashion House",
+    hero: "Style • Quality • Reliable Service",
+    shipping: 80,
+    cod: true,
+    advance: true,
+    warning:
+      "আপনার অর্ডারটি নিশ্চিত করার আগে অনুগ্রহ করে পণ্য, সাইজ/কালার, ঠিকানা ও মোবাইল নম্বর ভালোভাবে যাচাই করুন। আপনি অর্ডারটি গ্রহণ করতে পারবেন—এটি নিশ্চিত হয়ে তারপর Confirm Order করুন।"
+  },
 
-function saveEmployee() {
-    let name = document.getElementById("employee").value;
-    let month = document.getElementById("month").value;
-    let basic = Number(document.getElementById("basic").value);
-    let overtime = Number(document.getElementById("overtime").value);
-    let bonus = Number(document.getElementById("bonus").value);
-    let deduction = Number(document.getElementById("deduction").value);
-
-    if (name === "") {
-        alert("Employee Name লিখুন");
-        return;
+  products: [
+    {
+      id: "p1",
+      name: "Premium T-Shirt",
+      cat: "men",
+      price: 650,
+      old: 800,
+      colors: ["Black", "Blue"],
+      sizes: ["M", "L", "XL"],
+      image: "",
+      desc: "Comfortable premium cotton T-shirt."
+    },
+    {
+      id: "p2",
+      name: "Ladies Three Piece",
+      cat: "women",
+      price: 1250,
+      old: 1500,
+      colors: ["Black", "Blue", "Red"],
+      sizes: [],
+      image: "",
+      desc: "Stylish three piece for everyday fashion."
     }
+  ]
+};
 
-    let employee = {
-        name, month, basic, overtime, bonus, deduction,
-        netSalary: basic + overtime + bonus - deduction
-    };
+function getData() {
+  const saved = localStorage.getItem(KEY);
 
-    if (editIndex === -1) {
-        employees.push(employee);
-    } else {
-        employees[editIndex] = employee;
-        editIndex = -1;
-        document.getElementById("saveButton").innerText = "Save Employee";
-    }
+  if (saved) {
+    return JSON.parse(saved);
+  }
 
-    localStorage.setItem("employees", JSON.stringify(employees));
-    clearForm();
-    showEmployees();
+  localStorage.setItem(KEY, JSON.stringify(defaultData));
+  return defaultData;
 }
 
-function showEmployees() {
-    let list = document.getElementById("employeeList");
-    let searchText = document.getElementById("search").value.toLowerCase();
-    list.innerHTML = "";
-    let total = 0;
+function money(number) {
+  return "৳" + Number(number || 0).toLocaleString("en-BD");
+}
 
-    employees.forEach(function(employee, index) {
-        if (employee.name.toLowerCase().includes(searchText)) {
-            total += employee.netSalary;
+let selectedProduct = null;
+let selectedColor = "";
+let selectedSize = "";
 
-            list.innerHTML += `
-                <div class="employee-card">
-                    <strong>${employee.name}</strong><br>
-                    Month: ${employee.month}<br>
-                    Basic: ${employee.basic} টাকা<br>
-                    Overtime: ${employee.overtime} টাকা<br>
-                    Bonus: ${employee.bonus} টাকা<br>
-                    Deduction: ${employee.deduction} টাকা<br>
-                    <strong>Net Salary: ${employee.netSalary} টাকা</strong>
+function renderProducts(category = "all") {
+  const data = getData();
 
-                    <button class="edit-btn" onclick="editEmployee(${index})">Edit</button>
-                    <button class="delete-btn" onclick="deleteEmployee(${index})">Delete</button>
-                    <button class="print-btn" onclick="printSalary(${index})">Print Salary</button>
-                </div>`;
-        }
+  document.getElementById("brandName").textContent =
+    data.settings.brand;
+
+  document.getElementById("heroTitle").textContent =
+    data.settings.hero;
+
+  const productsBox = document.getElementById("products");
+
+  const products = data.products.filter(function (product) {
+    return category === "all" || product.cat === category;
+  });
+
+  if (products.length === 0) {
+    productsBox.innerHTML =
+      "<p>No products available.</p>";
+    return;
+  }
+
+  productsBox.innerHTML = products
+    .map(function (product) {
+      let discount = "";
+
+      if (product.old && product.old > product.price) {
+        discount =
+          Math.round(
+            (1 - product.price / product.old) * 100
+          ) + "% OFF";
+      }
+
+      let colorsHTML = "";
+
+      if (product.colors && product.colors.length) {
+        colorsHTML = `
+          <div>
+            <small><b>Color:</b></small>
+            <div class="options">
+              ${product.colors
+                .map(
+                  function (color) {
+                    return `
+                    <button
+                      type="button"
+                      class="option"
+                      onclick="selectColor('${product.id}','${color}',this)">
+                      ${color}
+                    </button>
+                    `;
+                  }
+                )
+                .join("")}
+            </div>
+          </div>
+        `;
+      }
+
+      let sizesHTML = "";
+
+      if (product.sizes && product.sizes.length) {
+        sizesHTML = `
+          <div>
+            <small><b>Size:</b></small>
+            <div class="options">
+              ${product.sizes
+                .map(
+                  function (size) {
+                    return `
+                    <button
+                      type="button"
+                      class="option"
+                      onclick="selectSize('${product.id}','${size}',this)">
+                      ${size}
+                    </button>
+                    `;
+                  }
+                )
+                .join("")}
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="card">
+
+          <img
+            src="${product.image || "cover.png"}"
+            alt="${product.name}"
+          >
+
+          <h3>${product.name}</h3>
+
+          <div>
+            <span class="price">
+              ${money(product.price)}
+            </span>
+
+            ${
+              product.old
+                ? `<span class="old">
+                    ${money(product.old)}
+                   </span>`
+                : ""
+            }
+
+            ${
+              discount
+                ? `<span class="discount">
+                    ${discount}
+                   </span>`
+                : ""
+            }
+          </div>
+
+          <p class="muted">
+            ${product.desc || ""}
+          </p>
+
+          ${colorsHTML}
+
+          ${sizesHTML}
+
+          <div
+            style="
+              display:flex;
+              gap:7px;
+              margin-top:10px;
+            "
+          >
+
+            <input
+              id="qty-${product.id}"
+              type="number"
+              min="1"
+              value="1"
+              style="max-width:80px"
+            >
+
+            <button
+              class="primary"
+              onclick="openCheckout('${product.id}')"
+            >
+              Order Now
+            </button>
+
+          </div>
+
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function selectColor(productId, color, button) {
+  selectedColor = color;
+
+  const card = button.closest(".card");
+
+  card
+    .querySelectorAll(".option")
+    .forEach(function (item) {
+      item.style.background = "";
+      item.style.color = "";
     });
 
-    document.getElementById("totalSalary").innerText = total;
+  button.style.background = "#111";
+  button.style.color = "#fff";
 }
 
-function editEmployee(index) {
-    let employee = employees[index];
+function selectSize(productId, size, button) {
+  selectedSize = size;
 
-    document.getElementById("employee").value = employee.name;
-    document.getElementById("month").value = employee.month;
-    document.getElementById("basic").value = employee.basic;
-    document.getElementById("overtime").value = employee.overtime;
-    document.getElementById("bonus").value = employee.bonus;
-    document.getElementById("deduction").value = employee.deduction;
+  const card = button.closest(".card");
 
-    editIndex = index;
-    document.getElementById("saveButton").innerText = "Update Employee";
-    window.scrollTo(0, 0);
+  const sizeButtons = card.querySelectorAll(".option");
+
+  sizeButtons.forEach(function (item) {
+    item.style.background = "";
+    item.style.color = "";
+  });
+
+  button.style.background = "#111";
+  button.style.color = "#fff";
 }
 
-function deleteEmployee(index) {
-    employees.splice(index, 1);
-    localStorage.setItem("employees", JSON.stringify(employees));
-    showEmployees();
-}
+function openCheckout(id) {
+  const data = getData();
 
-function clearForm() {
-    document.getElementById("employee").value = "";
-    document.getElementById("month").value = "";
-    document.getElementById("basic").value = "";
-    document.getElementById("overtime").value = "";
-    document.getElementById("bonus").value = "";
-    document.getElementById("deduction").value = "";
-}
+  const product = data.products.find(function (item) {
+    return item.id === id;
+  });
 
-function printSalary(index) {
-    let employee = employees[index];
+  if (!product) {
+    alert("Product not found.");
+    return;
+  }
 
-    let salarySheet = `
-    <html>
-    <head>
-        <title>Salary Sheet</title>
-        <style>
-            body { font-family: Arial; padding: 30px; }
-            .sheet { max-width: 600px; margin: auto; border: 2px solid #000; padding: 25px; }
-            h1 { text-align: center; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            td { border: 1px solid #000; padding: 10px; }
-            .net { font-weight: bold; font-size: 20px; }
-        </style>
-    </head>
-    <body>
-        <div class="sheet">
-            <h1>Salary Sheet</h1>
-            <p><strong>Employee:</strong> ${employee.name}</p>
-            <p><strong>Month:</strong> ${employee.month}</p>
-            <table>
-                <tr><td>Basic Salary</td><td>${employee.basic} টাকা</td></tr>
-                <tr><td>Overtime</td><td>${employee.overtime} টাকা</td></tr>
-                <tr><td>Bonus</td><td>${employee.bonus} টাকা</td></tr>
-                <tr><td>Deduction</td><td>${employee.deduction} টাকা</td></tr>
-                <tr class="net"><td>Net Salary</td><td>${employee.netSalary} টাকা</td></tr>
-            </table>
-        </div>
-        <script>window.print();<\/script>
-    </body>
-    </html>`;
+  selectedColor = "";
+  selectedSize = "";
 
-    let printWindow = window.open("", "_blank");
+  const quantityInput =
+    document.getElementById("qty-" + id);
 
-    if (!printWindow) {
-        alert("Print window খুলতে পারেনি। Browser-এর popup permission চালু করুন।");
-        return;
+  const quantity = Number(
+    quantityInput ? quantityInput.value : 1
+  );
+
+  selectedProduct = {
+    ...product,
+    qty: quantity
+  };
+
+  let optionsText = "";
+
+  if (product.colors && product.colors.length) {
+    optionsText += `
+      <p>
+        <b>Color:</b>
+        Please select before confirming.
+      </p>
+    `;
+  }
+
+  if (product.sizes && product.sizes.length) {
+    optionsText += `
+      <p>
+        <b>Size:</b>
+        Please select before confirming.
+      </p>
+    `;
+  }
+
+  document.getElementById("summaryBox").innerHTML = `
+    <h3>🛍️ Order Summary</h3>
+
+    <div class="row">
+      <span>
+        ${product.name} × ${quantity}
+      </span>
+
+      <b>
+        ${money(product.price * quantity)}
+      </b>
+    </div>
+
+    ${optionsText}
+  `;
+
+  document.getElementById("shipCharge").textContent =
+    money(data.settings.shipping);
+
+  document.getElementById("warningText").textContent =
+    data.settings.warning;
+
+  const codRadio =
+    document.querySelector(
+      'input[name="payment"][value="COD"]'
+    );
+
+  const advanceRadio =
+    document.querySelector(
+      'input[name="payment"][value="Advance"]'
+    );
+
+  if (codRadio) {
+    codRadio.parentElement.style.display =
+      data.settings.cod ? "block" : "none";
+
+    codRadio.checked = data.settings.cod;
+  }
+
+  if (advanceRadio) {
+    advanceRadio.parentElement.style.display =
+      data.settings.advance ? "block" : "none";
+
+    if (!data.settings.cod && data.settings.advance) {
+      advanceRadio.checked = true;
     }
+  }
 
-    printWindow.document.write(salarySheet);
-    printWindow.document.close();
+  document.getElementById("cName").value = "";
+  document.getElementById("cPhone").value = "";
+  document.getElementById("cAddress").value = "";
+
+  document.getElementById("confirmCheck").checked = false;
+
+  toggleConfirm();
+
+  document
+    .getElementById("checkoutModal")
+    .classList.remove("hidden");
 }
+
+function closeCheckout() {
+  document
+    .getElementById("checkoutModal")
+    .classList.add("hidden");
+}
+
+function toggleConfirm() {
+  const checkbox =
+    document.getElementById("confirmCheck");
+
+  const button =
+    document.getElementById("confirmBtn");
+
+  button.disabled = !checkbox.checked;
+}
+
+function submitOrder() {
+  const data = getData();
+
+  if (!selectedProduct) {
+    alert("Please select a product.");
+    return;
+  }
+
+  if (
+    selectedProduct.colors &&
+    selectedProduct.colors.length &&
+    !selectedColor
+  ) {
+    alert("Please select a color.");
+    return;
+  }
+
+  if (
+    selectedProduct.sizes &&
+    selectedProduct.sizes.length &&
+    !selectedSize
+  ) {
+    alert("Please select a size.");
+    return;
+  }
+
+  const name =
+    document.getElementById("cName").value.trim();
+
+  const phone =
+    document.getElementById("cPhone").value.trim();
+
+  const address =
+    document.getElementById("cAddress").value.trim();
+
+  if (!name || !phone || !address) {
+    alert(
+      "Please fill Customer Name, Mobile Number and Address."
+    );
+    return;
+  }
+
+  const paymentElement =
+    document.querySelector(
+      'input[name="payment"]:checked'
+    );
+
+  if (!paymentElement) {
+    alert("Please select a payment method.");
+    return;
+  }
+
+  const payment = paymentElement.value;
+
+  if (payment === "COD" && !data.settings.cod) {
+    alert("Cash on Delivery is currently unavailable.");
+    return;
+  }
+
+  if (
+    payment === "Advance" &&
+    !data.settings.advance
+  ) {
+    alert("Advance payment is currently unavailable.");
+    return;
+  }
+
+  const shipping =
+    Number(data.settings.shipping || 0);
+
+  const productTotal =
+    Number(selectedProduct.price) *
+    Number(selectedProduct.qty);
+
+  const total = productTotal + shipping;
+
+  const orders = JSON.parse(
+    localStorage.getItem("afh_orders") || "[]"
+  );
+
+  const newOrder = {
+    id: "AFH-" + Date.now(),
+
+    date: new Date().toLocaleString(),
+
+    name: name,
+
+    phone: phone,
+
+    address: address,
+
+    product: selectedProduct.name,
+
+    qty: selectedProduct.qty,
+
+    color: selectedColor,
+
+    size: selectedSize,
+
+    price: selectedProduct.price,
+
+    shipping: shipping,
+
+    productTotal: productTotal,
+
+    total: total,
+
+    payment: payment,
+
+    status: "Pending",
+
+    image: selectedProduct.image || "",
+
+    source:
+      new URLSearchParams(
+        window.location.search
+      ).get("source") || "Website"
+  };
+
+  orders.unshift(newOrder);
+
+  localStorage.setItem(
+    "afh_orders",
+    JSON.stringify(orders)
+  );
+
+  alert(
+    "✅ Order submitted successfully!\n\n" +
+    "Order ID: " +
+    newOrder.id
+  );
+
+  closeCheckout();
+}
+
+document
+  .querySelectorAll(".chip")
+  .forEach(function (button) {
+    button.addEventListener("click", function () {
+      document
+        .querySelectorAll(".chip")
+        .forEach(function (item) {
+          item.classList.remove("active");
+        });
+
+      button.classList.add("active");
+
+      renderProducts(button.dataset.cat);
+    });
+  });
+
+renderProducts();
