@@ -1,639 +1,150 @@
-
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Smart Order - Admin</title>
-
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
-<style>
-*{
-  box-sizing:border-box;
-}
-
-body{
-  margin:0;
-  font-family:Arial,sans-serif;
-  background:#f5f6fa;
-  color:#111;
-}
-
-.container{
-  max-width:800px;
-  margin:auto;
-  padding:20px;
-}
-
-h1{
-  text-align:center;
-  margin-bottom:25px;
-}
-
-.dashboard{
-  background:#111;
-  color:white;
-  border-radius:18px;
-  padding:22px;
-  margin-bottom:25px;
-}
-
-.count{
-  font-size:24px;
-  font-weight:bold;
-  margin-bottom:15px;
-}
-
-button{
-  border:0;
-  border-radius:10px;
-  padding:13px 18px;
-  font-size:16px;
-  cursor:pointer;
-}
-
-.refresh{
-  background:white;
-  color:#111;
-}
-
-.order{
-  background:white;
-  border-radius:18px;
-  padding:20px;
-  margin-bottom:20px;
-  box-shadow:0 4px 15px rgba(0,0,0,.08);
-}
-
-.order h2{
-  margin-top:0;
-  margin-bottom:20px;
-}
-
-.row{
-  margin:12px 0;
-  font-size:17px;
-  word-break:break-word;
-}
-
-.row b{
-  display:inline-block;
-  min-width:100px;
-}
-
-.status{
-  display:inline-block;
-  background:#fff0b8;
-  padding:8px 12px;
-  border-radius:8px;
-  font-weight:bold;
-}
-
-select,
-input{
-  padding:10px;
-  border-radius:8px;
-  border:1px solid #ccc;
-  font-size:16px;
-  width:100%;
-  margin-top:6px;
-}
-
-.edit{
-  background:#1976d2;
-  color:white;
-  margin-top:15px;
-  margin-right:8px;
-}
-
-.save{
-  background:#2e7d32;
-  color:white;
-  margin-top:15px;
-  margin-right:8px;
-}
-
-.cancel{
-  background:#757575;
-  color:white;
-  margin-top:15px;
-}
-
-.delete{
-  background:#e53935;
-  color:white;
-  margin-top:15px;
-}
-
-.editBox{
-  background:#f1f7ff;
-  padding:15px;
-  border-radius:12px;
-  margin-top:15px;
-  display:none;
-}
-
-.editBox label{
-  display:block;
-  margin-top:10px;
-  font-weight:bold;
-}
-
-.empty{
-  background:white;
-  padding:30px;
-  border-radius:15px;
-  text-align:center;
-  font-size:18px;
-}
-
-.loading{
-  text-align:center;
-  padding:30px;
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - Arif Fashion House</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<div class="container">
-
-<h1>📦 Smart Order Admin</h1>
-
-<div class="dashboard">
-
-  <div class="count">
-    মোট অর্ডার: <span id="totalOrders">0</span>
+<header class="topbar">
+  <div>
+    <h2>🛍️ Admin Panel</h2>
+    <small>Arif Fashion House</small>
   </div>
 
-  <button class="refresh" onclick="loadOrders()">
-    🔄 অর্ডার রিফ্রেশ করুন
-  </button>
+  <a href="index.html" class="btn">🌐 Store</a>
+</header>
 
-</div>
+<main class="admin-container">
 
-<div id="orders">
-  <div class="loading">অর্ডার লোড হচ্ছে...</div>
-</div>
+  <!-- WEBSITE SETTINGS -->
+  <section class="admin-box">
+    <h3>⚙️ Website Settings</h3>
 
-</div>
+    <label>Brand Name</label>
+    <input id="brand" type="text" placeholder="Brand Name">
 
-<script>
+    <label>Hero Banner Text</label>
+    <input id="hero" type="text" placeholder="Banner Text">
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCe33RiZ0fdmB78uQz03-Y3pWmLy9GDORA",
-  authDomain: "smart-order-a4fc2.firebaseapp.com",
-  databaseURL: "https://smart-order-a4fc2-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "smart-order-a4fc2",
-  storageBucket: "smart-order-a4fc2.firebasestorage.app",
-  messagingSenderId: "74381950217",
-  appId: "1:74381950217:web:54f82681d2f6869bb367d8",
-  measurementId: "G-L0L5PFY1DM"
-};
+    <label>Shipping Charge</label>
+    <input id="shipping" type="number" placeholder="Shipping Charge">
 
-firebase.initializeApp(firebaseConfig);
+    <label>Order Confirmation Warning</label>
+    <textarea id="warning" rows="5"></textarea>
 
-const database = firebase.database();
+    <label class="check-row">
+      <input id="codEnabled" type="checkbox">
+      Cash on Delivery (COD)
+    </label>
+
+    <label class="check-row">
+      <input id="advanceEnabled" type="checkbox">
+      Advance Payment
+    </label>
+
+    <button class="primary-btn" onclick="saveSettings()">
+      💾 Save Settings
+    </button>
+  </section>
 
 
-function loadOrders(){
+  <!-- PRODUCT FORM -->
+  <section class="admin-box">
 
-  const box = document.getElementById("orders");
+    <h3>📦 Add / Edit Product</h3>
 
-  box.innerHTML = `
-    <div class="loading">
-      ⏳ অর্ডার লোড হচ্ছে...
+    <input type="hidden" id="productId">
+
+    <label>Product Name</label>
+    <input id="productName" type="text" placeholder="Product Name">
+
+    <label>Category</label>
+    <select id="productCategory">
+      <option value="Men">Men</option>
+      <option value="Women">Women</option>
+      <option value="Kids">Kids</option>
+      <option value="Other">Other</option>
+    </select>
+
+    <label>Product Image URL</label>
+    <input id="productImage" type="text"
+      placeholder="https://example.com/image.jpg">
+
+    <label>Regular Price</label>
+    <input id="productPrice" type="number" placeholder="1000">
+
+    <label>Old Price</label>
+    <input id="productOldPrice" type="number" placeholder="1200">
+
+    <label>Colors</label>
+    <input id="productColors" type="text"
+      placeholder="Black, Blue, Red">
+
+    <small>একাধিক color হলে comma দিয়ে লিখুন</small>
+
+    <label>Sizes</label>
+    <input id="productSizes" type="text"
+      placeholder="S, M, L, XL, XXL">
+
+    <small>Size না থাকলে খালি রাখুন</small>
+
+    <label>YouTube Video Link</label>
+    <input id="productYoutube" type="text"
+      placeholder="https://youtube.com/watch?v=...">
+
+    <label>Product Description</label>
+    <textarea id="productDescription"
+      rows="5"
+      placeholder="Product details..."></textarea>
+
+    <div class="button-row">
+
+      <button class="primary-btn" onclick="saveProduct()">
+        💾 Save Product
+      </button>
+
+      <button class="secondary-btn" onclick="clearProductForm()">
+        ✖ Clear
+      </button>
+
     </div>
-  `;
 
-  database.ref("orders").once("value")
-  .then(function(snapshot){
+  </section>
 
-    const data = snapshot.val();
 
-    box.innerHTML = "";
+  <!-- PRODUCTS -->
+  <section class="admin-box">
 
-    if(!data){
+    <div class="section-title">
+      <h3>🛍️ Products</h3>
+      <span id="productCount">0 Products</span>
+    </div>
 
-      document.getElementById("totalOrders").innerText = "0";
+    <div id="productsGrid" class="admin-grid"></div>
 
-      box.innerHTML = `
-        <div class="empty">
-          📭 এখনো কোনো অর্ডার পাওয়া যায়নি।
-        </div>
-      `;
+  </section>
 
-      return;
-    }
 
-    const orders = Object.entries(data).reverse();
+  <!-- ORDERS -->
+  <section class="admin-box">
 
-    document.getElementById("totalOrders").innerText = orders.length;
+    <div class="section-title">
+      <h3>📋 Orders</h3>
+      <span id="orderCount">0 Orders</span>
+    </div>
 
-    orders.forEach(function(item){
+    <div id="ordersGrid" class="admin-grid"></div>
 
-      const id = item[0];
-      const order = item[1] || {};
+  </section>
 
-      const name = order.customerName || order.name || "";
-      const phone = order.phone || "";
-      const address = order.address || "";
-      const quantity = order.quantity || 1;
-      const productPrice = order.productPrice || 500;
-      const shipping = order.shipping || 0;
+</main>
 
-      let total = order.total;
 
-      if(total === undefined || total === null || total === ""){
-        total =
-          Number(productPrice) * Number(quantity) +
-          Number(shipping);
-      }
-
-      let orderTime = order.orderTime || "";
-
-      if(orderTime){
-        try{
-          orderTime = new Date(orderTime).toLocaleString("bn-BD");
-        }catch(e){}
-      }
-
-      const status = order.status || "New";
-
-      const div = document.createElement("div");
-
-      div.className = "order";
-
-      div.innerHTML = `
-
-        <h2>🛍️ অর্ডার</h2>
-
-        <div class="row">
-          <b>নাম:</b>
-          ${escapeHTML(name || "দেওয়া হয়নি")}
-        </div>
-
-        <div class="row">
-          <b>মোবাইল:</b>
-          ${escapeHTML(phone || "দেওয়া হয়নি")}
-        </div>
-
-        <div class="row">
-          <b>ঠিকানা:</b>
-          ${escapeHTML(address || "দেওয়া হয়নি")}
-        </div>
-
-        <div class="row">
-          <b>Quantity:</b>
-          ${escapeHTML(quantity)}
-        </div>
-
-        <div class="row">
-          <b>Product:</b>
-          ৳${escapeHTML(productPrice)}
-        </div>
-
-        <div class="row">
-          <b>Shipping:</b>
-          ৳${escapeHTML(shipping)}
-        </div>
-
-        <div class="row">
-          <b>মোট:</b>
-          <strong>৳${escapeHTML(total)}</strong>
-        </div>
-
-        <div class="row">
-          <b>Order Time:</b>
-          ${escapeHTML(orderTime)}
-        </div>
-
-        <div class="row">
-
-          <b>Status:</b>
-
-          <select onchange="changeStatus('${id}', this.value)">
-
-            <option value="New"
-              ${status === "New" ? "selected" : ""}>
-              New
-            </option>
-
-            <option value="Confirmed"
-              ${status === "Confirmed" ? "selected" : ""}>
-              Confirmed
-            </option>
-
-            <option value="Processing"
-              ${status === "Processing" ? "selected" : ""}>
-              Processing
-            </option>
-
-            <option value="Delivered"
-              ${status === "Delivered" ? "selected" : ""}>
-              Delivered
-            </option>
-
-            <option value="Cancelled"
-              ${status === "Cancelled" ? "selected" : ""}>
-              Cancelled
-            </option>
-
-          </select>
-
-        </div>
-
-
-        <!-- EDIT BOX -->
-
-        <div class="editBox" id="edit-${id}">
-
-          <label>👤 নাম</label>
-          <input
-            id="name-${id}"
-            value="${escapeHTML(name)}"
-            type="text"
-          >
-
-          <label>📱 মোবাইল</label>
-          <input
-            id="phone-${id}"
-            value="${escapeHTML(phone)}"
-            type="text"
-          >
-
-          <label>📍 ঠিকানা</label>
-          <input
-            id="address-${id}"
-            value="${escapeHTML(address)}"
-            type="text"
-          >
-
-          <label>🔢 Quantity</label>
-          <input
-            id="quantity-${id}"
-            value="${escapeHTML(quantity)}"
-            type="number"
-            min="1"
-          >
-
-          <label>💰 Product Price</label>
-          <input
-            id="price-${id}"
-            value="${escapeHTML(productPrice)}"
-            type="number"
-            min="0"
-          >
-
-          <label>🚚 Shipping</label>
-          <input
-            id="shipping-${id}"
-            value="${escapeHTML(shipping)}"
-            type="number"
-            min="0"
-          >
-
-          <button
-            class="save"
-            onclick="saveEdit('${id}')">
-            💾 Save Changes
-          </button>
-
-          <button
-            class="cancel"
-            onclick="cancelEdit('${id}')">
-            ❌ Cancel
-          </button>
-
-        </div>
-
-
-        <button
-          class="edit"
-          onclick="openEdit('${id}')">
-          ✏️ Edit Order
-        </button>
-
-        <button
-          class="delete"
-          onclick="deleteOrder('${id}')">
-          🗑️ অর্ডার মুছে ফেলুন
-        </button>
-
-      `;
-
-      box.appendChild(div);
-
-    });
-
-  })
-  .catch(function(error){
-
-    box.innerHTML = `
-      <div class="empty">
-        ❌ অর্ডার লোড করা যাচ্ছে না।<br><br>
-        ${escapeHTML(error.message)}
-      </div>
-    `;
-
-  });
-
-}
-
-
-/* EDIT OPEN */
-
-function openEdit(id){
-
-  const box = document.getElementById("edit-" + id);
-
-  if(box){
-    box.style.display = "block";
-  }
-
-}
-
-
-/* EDIT CANCEL */
-
-function cancelEdit(id){
-
-  const box = document.getElementById("edit-" + id);
-
-  if(box){
-    box.style.display = "none";
-  }
-
-}
-
-
-/* SAVE EDIT */
-
-function saveEdit(id){
-
-  const name =
-    document.getElementById("name-" + id).value.trim();
-
-  const phone =
-    document.getElementById("phone-" + id).value.trim();
-
-  const address =
-    document.getElementById("address-" + id).value.trim();
-
-  const quantity =
-    Number(document.getElementById("quantity-" + id).value);
-
-  const productPrice =
-    Number(document.getElementById("price-" + id).value);
-
-  const shipping =
-    Number(document.getElementById("shipping-" + id).value);
-
-
-  if(quantity < 1){
-
-    alert("Quantity কমপক্ষে 1 হতে হবে।");
-
-    return;
-  }
-
-
-  if(productPrice < 0){
-
-    alert("Product Price সঠিকভাবে দিন।");
-
-    return;
-  }
-
-
-  if(shipping < 0){
-
-    alert("Shipping সঠিকভাবে দিন।");
-
-    return;
-  }
-
-
-  const total =
-    productPrice * quantity + shipping;
-
-
-  database.ref("orders/" + id).update({
-
-    name: name,
-    phone: phone,
-    address: address,
-    quantity: quantity,
-    productPrice: productPrice,
-    shipping: shipping,
-    total: total
-
-  })
-
-  .then(function(){
-
-    alert("অর্ডার সফলভাবে Edit হয়েছে ✅");
-
-    loadOrders();
-
-  })
-
-  .catch(function(error){
-
-    alert(
-      "অর্ডার Edit করা যায়নি!\n\n" +
-      error.message
-    );
-
-  });
-
-}
-
-
-/* CHANGE STATUS */
-
-function changeStatus(id,status){
-
-  database.ref("orders/" + id).update({
-
-    status: status
-
-  })
-
-  .then(function(){
-
-    alert("স্ট্যাটাস পরিবর্তন হয়েছে ✅");
-
-  })
-
-  .catch(function(error){
-
-    alert(
-      "স্ট্যাটাস পরিবর্তন হয়নি!\n\n" +
-      error.message
-    );
-
-  });
-
-}
-
-
-/* DELETE ORDER */
-
-function deleteOrder(id){
-
-  const confirmDelete = confirm(
-    "আপনি কি এই অর্ডারটি মুছে ফেলতে চান?"
-  );
-
-  if(!confirmDelete){
-    return;
-  }
-
-  database.ref("orders/" + id).remove()
-
-  .then(function(){
-
-    alert("অর্ডার মুছে ফেলা হয়েছে ✅");
-
-    loadOrders();
-
-  })
-
-  .catch(function(error){
-
-    alert(
-      "অর্ডার মুছে ফেলা যায়নি!\n\n" +
-      error.message
-    );
-
-  });
-
-}
-
-
-/* ESCAPE HTML */
-
-function escapeHTML(value){
-
-  return String(value)
-
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#039;");
-
-}
-
-
-loadOrders();
-
-</script>
+<script src="admin.js"></script>
 
 </body>
 </html>
-
