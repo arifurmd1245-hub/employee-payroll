@@ -6,115 +6,345 @@
 <title>Arif Fashion House</title>
 <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
 <header class="topbar">
+
   <div class="brand">
-    <img src="logo.png" onerror="this.style.display='none'">
+
+    <img src="logo.png"
+         onerror="this.style.display='none'">
+
     <div>
       <b id="brandName">Arif Fashion House</b>
       <small>Men's & Women's Fashion</small>
     </div>
+
   </div>
-  <a class="admin-link" href="admin.html">Admin</a>
+
+  <a class="admin-link" href="admin.html">
+    Admin
+  </a>
+
 </header>
 
+
 <section class="hero">
-  <img src="cover.png" onerror="this.style.display='none'">
+
+  <img src="cover.png"
+       onerror="this.style.display='none'">
+
   <div>
-    <h1 id="heroTitle">Style • Quality • Reliable Service</h1>
-    <p>Trendy fashion with home delivery.</p>
+
+    <h1 id="heroText">
+      Style • Quality • Reliable Service
+    </h1>
+
+    <p>
+      Trendy fashion with home delivery.
+    </p>
+
   </div>
+
 </section>
 
+
 <main>
+
   <div class="section-title">
+
     <h2>Products</h2>
+
     <div class="chips">
-      <button class="chip active" data-cat="all">All</button>
-      <button class="chip" data-cat="men">Men</button>
-      <button class="chip" data-cat="women">Women</button>
+
+      <button class="chip active"
+              data-cat="all">
+        All
+      </button>
+
+      <button class="chip"
+              data-cat="men">
+        Men
+      </button>
+
+      <button class="chip"
+              data-cat="women">
+        Women
+      </button>
+
     </div>
+
   </div>
 
+
   <div id="products" class="grid"></div>
+
 </main>
 
+
+
+<!-- =========================
+     CHECKOUT
+     ========================= -->
+
 <div id="checkoutModal" class="modal hidden">
+
   <div class="modal-card">
 
-    <button class="close" onclick="closeCheckout()">×</button>
+    <button class="close"
+            onclick="closeCheckout()">
+      ×
+    </button>
 
-    <h2>Confirm Your Order</h2>
 
-    <div class="box" id="summaryBox"></div>
+    <h2>🛍️ Confirm Your Order</h2>
+
+
+    <!-- PRODUCT -->
 
     <div class="box">
+
+      <div style="
+        display:flex;
+        gap:12px;
+        align-items:center;
+      ">
+
+        <img id="checkoutProductImage"
+             src=""
+             alt="Product"
+             style="
+               width:80px;
+               height:80px;
+               object-fit:cover;
+               border-radius:8px;
+             ">
+
+        <div>
+
+          <h3 id="checkoutProductName">
+            Product
+          </h3>
+
+          <b id="checkoutPrice">
+            ৳0
+          </b>
+
+        </div>
+
+      </div>
+
+
+      <!-- COLOR -->
+
+      <div style="margin-top:15px;">
+
+        <h4>🎨 Color</h4>
+
+        <div id="colorOptions"></div>
+
+      </div>
+
+
+      <!-- SIZE -->
+
+      <div style="margin-top:15px;">
+
+        <h4>📏 Size</h4>
+
+        <div id="sizeOptions"></div>
+
+      </div>
+
+
+      <!-- QUANTITY -->
+
+      <div style="margin-top:15px;">
+
+        <h4>🔢 Quantity</h4>
+
+        <div style="
+          display:flex;
+          align-items:center;
+          gap:12px;
+        ">
+
+          <button type="button"
+                  onclick="changeQty(-1)">
+            −
+          </button>
+
+          <b id="quantity">1</b>
+
+          <button type="button"
+                  onclick="changeQty(1)">
+            +
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+
+    <!-- CUSTOMER -->
+
+    <div class="box">
+
       <h3>👤 Customer Information</h3>
 
-      <input id="cName" placeholder="Customer Name *">
+      <input id="customerName"
+             type="text"
+             placeholder="Customer Name *">
 
-      <input id="cPhone"
+      <input id="customerPhone"
+             type="tel"
              placeholder="Mobile Number *"
              inputmode="tel">
 
-      <textarea id="cAddress"
+      <textarea id="customerAddress"
                 placeholder="Full Delivery Address *"></textarea>
+
     </div>
 
+
+
+    <!-- ORDER SUMMARY -->
+
     <div class="box">
-      <h3>🚚 Delivery</h3>
+
+      <h3>🚚 Order Summary</h3>
 
       <div class="row">
-        <span>Delivery Charge</span>
-        <b id="shipCharge">৳0</b>
+
+        <span>
+          Product Total
+        </span>
+
+        <b id="productTotal">
+          ৳0
+        </b>
+
       </div>
+
+
+      <div class="row">
+
+        <span>
+          Delivery Charge
+        </span>
+
+        <b id="orderShipping">
+          ৳0
+        </b>
+
+      </div>
+
+
+      <hr>
+
+
+      <div class="row">
+
+        <span>
+          <strong>Total</strong>
+        </span>
+
+        <b id="orderTotal">
+          ৳0
+        </b>
+
+      </div>
+
     </div>
 
-    <div class="box">
+
+
+    <!-- PAYMENT -->
+
+    <div class="box"
+         id="paymentBox">
+
       <h3>💳 Payment Method</h3>
 
       <label>
+
         <input type="radio"
                name="payment"
-               value="COD"
+               value="Cash on Delivery"
                checked>
+
         Cash on Delivery
+
       </label>
 
+
       <label>
+
         <input type="radio"
                name="payment"
-               value="Advance">
+               value="Advance Payment">
+
         Advance Payment
+
       </label>
+
     </div>
 
+
+
+    <!-- WARNING -->
+
     <div class="box warning">
+
       <h3>⚠️ Order Confirmation</h3>
 
-      <p id="warningText"></p>
+      <p id="warningText">
+        আপনার অর্ডারের তথ্য সঠিকভাবে যাচাই করে
+        Confirm Order করুন।
+      </p>
+
 
       <label>
+
         <input type="checkbox"
                id="confirmCheck"
                onchange="toggleConfirm()">
 
-        আমি অর্ডারের তথ্য যাচাই করেছি এবং অর্ডারটি গ্রহণ করব।
+        আমি অর্ডারের তথ্য যাচাই করেছি এবং
+        অর্ডারটি গ্রহণ করব।
+
       </label>
+
     </div>
 
-    <button id="confirmBtn"
+
+
+    <!-- CONFIRM -->
+
+    <button id="confirmOrder"
             class="primary full"
             disabled
             onclick="submitOrder()">
+
       ✅ Confirm Order
+
     </button>
 
   </div>
+
 </div>
 
-<script src="script.js"></script>
+
+
+<!-- IMPORTANT:
+     Cache refresh করার জন্য script version দেওয়া হয়েছে.
+-->
+
+<script src="script.js?v=4"></script>
 
 </body>
-</html>
+  </html>
