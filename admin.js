@@ -8,29 +8,166 @@ const defaultData = {
     shipping: 80,
     cod: true,
     advance: true,
+    bkashNumber: "",
+    nagadNumber: "",
+    rocketNumber: "",
     warning:
       "📦 Order Confirmation\nআপনার অর্ডারটি নিশ্চিত করার আগে অনুগ্রহ করে পণ্য, সাইজ/কালার, ঠিকানা ও মোবাইল নম্বর ভালোভাবে যাচাই করুন।\nআপনি অর্ডারটি গ্রহণ করতে পারবেন—এটি নিশ্চিত হয়ে তারপর Confirm Order করুন।"
   },
-  products: []
+
+  products: [
+    {
+      id: "p1",
+      name: "Premium T-Shirt",
+      cat: "men",
+      category: "men",
+      price: 650,
+      old: 800,
+      oldPrice: 800,
+      colors: ["Black", "Blue"],
+      sizes: ["M", "L", "XL"],
+      image: "",
+      youtube: "",
+      desc: "Comfortable premium cotton T-shirt.",
+      description: "Comfortable premium cotton T-shirt."
+    }
+  ]
 };
+
+
+/* =========================
+   DATA
+========================= */
+
+function normalizeProduct(product) {
+  product = product || {};
+
+  const cat = String(
+    product.cat ||
+    product.category ||
+    "other"
+  ).toLowerCase();
+
+  const oldPrice = Number(
+    product.old ??
+    product.oldPrice ??
+    0
+  );
+
+  const description =
+    product.desc ??
+    product.description ??
+    "";
+
+  return {
+    id: product.id || ("P" + Date.now()),
+    name: product.name || "",
+    cat: cat,
+    category: cat,
+    image: product.image || "",
+    price: Number(product.price || 0),
+    old: oldPrice,
+    oldPrice: oldPrice,
+    colors: Array.isArray(product.colors)
+      ? product.colors
+      : [],
+    sizes: Array.isArray(product.sizes)
+      ? product.sizes
+      : [],
+    youtube: product.youtube || "",
+    desc: description,
+    description: description
+  };
+}
+
 
 function getData() {
   const saved = localStorage.getItem(DATA_KEY);
 
   if (!saved) {
-    localStorage.setItem(DATA_KEY, JSON.stringify(defaultData));
-    return defaultData;
+    const data = JSON.parse(
+      JSON.stringify(defaultData)
+    );
+
+    localStorage.setItem(
+      DATA_KEY,
+      JSON.stringify(data)
+    );
+
+    return data;
   }
 
   try {
-    return JSON.parse(saved);
+    const data = JSON.parse(saved);
+
+    if (!data.settings) {
+      data.settings = {};
+    }
+
+    data.settings = {
+      ...defaultData.settings,
+      ...data.settings
+    };
+
+    if (!Array.isArray(data.products)) {
+      data.products = [];
+    }
+
+    data.products =
+      data.products.map(normalizeProduct);
+
+    /*
+      Old data repair:
+      যদি Premium T-Shirt হারিয়ে যায়,
+      একবার automatically ফিরিয়ে আনা হবে।
+    */
+    const repairKey =
+      "afh_default_repair_v1";
+
+    const premiumExists =
+      data.products.some(
+        p => p.id === "p1"
+      );
+
+    if (
+      !premiumExists &&
+      !localStorage.getItem(repairKey)
+    ) {
+      data.products.unshift(
+        normalizeProduct(defaultData.products[0])
+      );
+
+      localStorage.setItem(
+        repairKey,
+        "done"
+      );
+    }
+
+    saveData(data);
+
+    return data;
+
   } catch (error) {
-    return defaultData;
+
+    const data = JSON.parse(
+      JSON.stringify(defaultData)
+    );
+
+    localStorage.setItem(
+      DATA_KEY,
+      JSON.stringify(data)
+    );
+
+    return data;
   }
 }
 
+
 function saveData(data) {
-  localStorage.setItem(DATA_KEY, JSON.stringify(data));
+  localStorage.setItem(
+    DATA_KEY,
+    JSON.stringify(data)
+  );
 }
 
 
@@ -39,42 +176,159 @@ function saveData(data) {
 ========================= */
 
 function loadSettings() {
+
   const data = getData();
   const s = data.settings || {};
 
-  document.getElementById("brand").value = s.brand || "";
-  document.getElementById("hero").value = s.hero || "";
-  document.getElementById("shipping").value = s.shipping || 0;
-  document.getElementById("warning").value = s.warning || "";
+  const brand =
+    document.getElementById("brand");
 
-  document.getElementById("codEnabled").checked =
-    s.cod !== false;
+  const hero =
+    document.getElementById("hero");
 
-  document.getElementById("advanceEnabled").checked =
-    s.advance !== false;
+  const shipping =
+    document.getElementById("shipping");
+
+  const warning =
+    document.getElementById("warning");
+
+  const cod =
+    document.getElementById("codEnabled");
+
+  const advance =
+    document.getElementById("advanceEnabled");
+
+  if (brand) {
+    brand.value = s.brand || "";
+  }
+
+  if (hero) {
+    hero.value = s.hero || "";
+  }
+
+  if (shipping) {
+    shipping.value = s.shipping || 0;
+  }
+
+  if (warning) {
+    warning.value = s.warning || "";
+  }
+
+  if (cod) {
+    cod.checked = s.cod !== false;
+  }
+
+  if (advance) {
+    advance.checked = s.advance !== false;
+  }
+
+  const bkash =
+    document.getElementById("bkashNumber");
+
+  const nagad =
+    document.getElementById("nagadNumber");
+
+  const rocket =
+    document.getElementById("rocketNumber");
+
+  if (bkash) {
+    bkash.value =
+      s.bkashNumber || "";
+  }
+
+  if (nagad) {
+    nagad.value =
+      s.nagadNumber || "";
+  }
+
+  if (rocket) {
+    rocket.value =
+      s.rocketNumber || "";
+  }
 }
 
+
 function saveSettings() {
+
   const data = getData();
 
+  const brand =
+    document.getElementById("brand");
+
+  const hero =
+    document.getElementById("hero");
+
+  const shipping =
+    document.getElementById("shipping");
+
+  const warning =
+    document.getElementById("warning");
+
+  const cod =
+    document.getElementById("codEnabled");
+
+  const advance =
+    document.getElementById("advanceEnabled");
+
+  const bkash =
+    document.getElementById("bkashNumber");
+
+  const nagad =
+    document.getElementById("nagadNumber");
+
+  const rocket =
+    document.getElementById("rocketNumber");
+
   data.settings = {
-    brand: document.getElementById("brand").value.trim(),
-    hero: document.getElementById("hero").value.trim(),
-    shipping:
-      Number(document.getElementById("shipping").value) || 0,
-    cod: document.getElementById("codEnabled").checked,
-    advance: document.getElementById("advanceEnabled").checked,
-    warning: document.getElementById("warning").value.trim()
+    ...data.settings,
+
+    brand: brand
+      ? brand.value.trim()
+      : data.settings.brand,
+
+    hero: hero
+      ? hero.value.trim()
+      : data.settings.hero,
+
+    shipping: shipping
+      ? Number(shipping.value) || 0
+      : data.settings.shipping,
+
+    cod: cod
+      ? cod.checked
+      : data.settings.cod,
+
+    advance: advance
+      ? advance.checked
+      : data.settings.advance,
+
+    warning: warning
+      ? warning.value.trim()
+      : data.settings.warning,
+
+    bkashNumber: bkash
+      ? bkash.value.trim()
+      : data.settings.bkashNumber || "",
+
+    nagadNumber: nagad
+      ? nagad.value.trim()
+      : data.settings.nagadNumber || "",
+
+    rocketNumber: rocket
+      ? rocket.value.trim()
+      : data.settings.rocketNumber || ""
   };
 
   saveData(data);
 
-  alert("✅ Website settings saved successfully!");
+  alert(
+    "✅ Website settings saved successfully!"
+  );
 }
 
 
 /* =========================
-   PRODUCT
+   PRODUCT SAVE
 ========================= */
 
 function saveProduct() {
@@ -86,31 +340,45 @@ function saveProduct() {
     "P" + Date.now();
 
   const name =
-    document.getElementById("productName").value.trim();
+    document.getElementById("productName")
+      .value.trim();
 
   const category =
-    document.getElementById("productCategory").value;
+    document.getElementById("productCategory")
+      .value;
 
   const image =
-    document.getElementById("productImage").value.trim();
+    document.getElementById("productImage")
+      .value.trim();
 
   const price =
-    Number(document.getElementById("productPrice").value) || 0;
+    Number(
+      document.getElementById("productPrice")
+        .value
+    ) || 0;
 
   const oldPrice =
-    Number(document.getElementById("productOldPrice").value) || 0;
+    Number(
+      document.getElementById("productOldPrice")
+        .value
+    ) || 0;
 
   const colorsText =
-    document.getElementById("productColors").value.trim();
+    document.getElementById("productColors")
+      .value.trim();
 
   const sizesText =
-    document.getElementById("productSizes").value.trim();
+    document.getElementById("productSizes")
+      .value.trim();
 
   const youtube =
-    document.getElementById("productYoutube").value.trim();
+    document.getElementById("productYoutube")
+      .value.trim();
 
   const description =
-    document.getElementById("productDescription").value.trim();
+    document.getElementById(
+      "productDescription"
+    ).value.trim();
 
   if (!name) {
     alert("⚠️ Product name দিন");
@@ -136,24 +404,41 @@ function saveProduct() {
         .filter(Boolean)
     : [];
 
+  const cat =
+    String(category || "other")
+      .toLowerCase();
+
   const product = {
     id,
     name,
-    category,
+
+    cat,
+    category: cat,
+
     image,
+
     price,
+
+    old: oldPrice,
     oldPrice,
+
     colors,
     sizes,
+
     youtube,
+
+    desc: description,
     description
   };
 
   const existingIndex =
-    data.products.findIndex(p => p.id === id);
+    data.products.findIndex(
+      p => String(p.id) === String(id)
+    );
 
   if (existingIndex >= 0) {
-    data.products[existingIndex] = product;
+    data.products[existingIndex] =
+      product;
   } else {
     data.products.push(product);
   }
@@ -161,9 +446,12 @@ function saveProduct() {
   saveData(data);
 
   clearProductForm();
+
   renderProducts();
 
-  alert("✅ Product saved successfully!");
+  alert(
+    "✅ Product saved successfully!"
+  );
 }
 
 
@@ -173,28 +461,46 @@ function saveProduct() {
 
 function clearProductForm() {
 
-  document.getElementById("productId").value = "";
+  document.getElementById(
+    "productId"
+  ).value = "";
 
-  document.getElementById("productName").value = "";
+  document.getElementById(
+    "productName"
+  ).value = "";
 
-  document.getElementById("productCategory").value = "Men";
+  document.getElementById(
+    "productCategory"
+  ).value = "men";
 
-  document.getElementById("productImage").value = "";
+  document.getElementById(
+    "productImage"
+  ).value = "";
 
-  document.getElementById("productPrice").value = "";
+  document.getElementById(
+    "productPrice"
+  ).value = "";
 
-  document.getElementById("productOldPrice").value = "";
+  document.getElementById(
+    "productOldPrice"
+  ).value = "";
 
-  document.getElementById("productColors").value = "";
+  document.getElementById(
+    "productColors"
+  ).value = "";
 
-  document.getElementById("productSizes").value = "";
+  document.getElementById(
+    "productSizes"
+  ).value = "";
 
-  document.getElementById("productYoutube").value = "";
+  document.getElementById(
+    "productYoutube"
+  ).value = "";
 
-  document.getElementById("productDescription").value = "";
-}
-
-
+  document.getElementById(
+    "productDescription"
+  ).value = "";
+    }
 /* =========================
    EDIT PRODUCT
 ========================= */
@@ -204,39 +510,70 @@ function editProduct(id) {
   const data = getData();
 
   const product =
-    data.products.find(p => p.id === id);
+    data.products.find(
+      p => String(p.id) === String(id)
+    );
 
-  if (!product) return;
+  if (!product) {
+    alert("Product পাওয়া যায়নি");
+    return;
+  }
 
-  document.getElementById("productId").value =
-    product.id;
+  document.getElementById(
+    "productId"
+  ).value = product.id || "";
 
-  document.getElementById("productName").value =
-    product.name || "";
+  document.getElementById(
+    "productName"
+  ).value = product.name || "";
 
-  document.getElementById("productCategory").value =
-    product.category || "Men";
+  document.getElementById(
+    "productCategory"
+  ).value =
+    String(
+      product.cat ||
+      product.category ||
+      "other"
+    ).toLowerCase();
 
-  document.getElementById("productImage").value =
+  document.getElementById(
+    "productImage"
+  ).value =
     product.image || "";
 
-  document.getElementById("productPrice").value =
+  document.getElementById(
+    "productPrice"
+  ).value =
     product.price || "";
 
-  document.getElementById("productOldPrice").value =
-    product.oldPrice || "";
+  document.getElementById(
+    "productOldPrice"
+  ).value =
+    product.old ??
+    product.oldPrice ??
+    "";
 
-  document.getElementById("productColors").value =
+  document.getElementById(
+    "productColors"
+  ).value =
     (product.colors || []).join(", ");
 
-  document.getElementById("productSizes").value =
+  document.getElementById(
+    "productSizes"
+  ).value =
     (product.sizes || []).join(", ");
 
-  document.getElementById("productYoutube").value =
+  document.getElementById(
+    "productYoutube"
+  ).value =
     product.youtube || "";
 
-  document.getElementById("productDescription").value =
-    product.description || "";
+  document.getElementById(
+    "productDescription"
+  ).value =
+    product.desc ??
+    product.description ??
+    "";
 
   window.scrollTo({
     top: 0,
@@ -251,21 +588,44 @@ function editProduct(id) {
 
 function deleteProduct(id) {
 
-  const ok =
-    confirm("এই product টি delete করতে চান?");
+  const ok = confirm(
+    "এই product টি delete করতে চান?"
+  );
 
   if (!ok) return;
 
   const data = getData();
 
   data.products =
-    data.products.filter(p => p.id !== id);
+    data.products.filter(
+      p => String(p.id) !== String(id)
+    );
 
   saveData(data);
 
   renderProducts();
 
-  alert("🗑️ Product deleted");
+  alert(
+    "🗑️ Product deleted"
+  );
+}
+
+
+/* =========================
+   CATEGORY NAME
+========================= */
+
+function categoryName(category) {
+
+  const cat =
+    String(category || "")
+      .toLowerCase();
+
+  if (cat === "men") return "Men";
+  if (cat === "women") return "Women";
+  if (cat === "kids") return "Kids";
+
+  return "Other";
 }
 
 
@@ -278,10 +638,16 @@ function renderProducts() {
   const data = getData();
 
   const container =
-    document.getElementById("productsGrid");
+    document.getElementById(
+      "productsGrid"
+    );
 
   const count =
-    document.getElementById("productCount");
+    document.getElementById(
+      "productCount"
+    );
+
+  if (!container) return;
 
   if (count) {
     count.textContent =
@@ -301,89 +667,177 @@ function renderProducts() {
   }
 
   container.innerHTML =
-    data.products.map(product => {
+    data.products
+      .map(function(product) {
 
-      const discount =
-        product.oldPrice > product.price
-          ? Math.round(
-              ((product.oldPrice - product.price) /
-                product.oldPrice) * 100
-            )
-          : 0;
+        const price =
+          Number(product.price || 0);
 
-      return `
-        <div class="admin-card">
+        const oldPrice =
+          Number(
+            product.old ??
+            product.oldPrice ??
+            0
+          );
 
-          ${
-            product.image
-              ? `<img src="${escapeHtml(product.image)}"
-                   class="admin-product-image"
-                   onerror="this.style.display='none'">`
-              : `<div class="image-placeholder">📷</div>`
-          }
+        const discount =
+          oldPrice > price
+            ? Math.round(
+                ((oldPrice - price) /
+                  oldPrice) * 100
+              )
+            : 0;
 
-          <h3>${escapeHtml(product.name)}</h3>
+        const colors =
+          Array.isArray(product.colors)
+            ? product.colors
+            : [];
 
-          <p>
-            Category:
-            <strong>${escapeHtml(product.category)}</strong>
-          </p>
+        const sizes =
+          Array.isArray(product.sizes)
+            ? product.sizes
+            : [];
 
-          <p>
-            Price:
-            <strong>৳${product.price}</strong>
-          </p>
+        return `
+          <div class="admin-card">
 
-          ${
-            product.oldPrice
-              ? `<p class="old-price">
-                   Old Price: ৳${product.oldPrice}
-                 </p>`
-              : ""
-          }
+            ${
+              product.image
+                ? `
+                  <img
+                    src="${escapeHtml(
+                      product.image
+                    )}"
+                    class="admin-product-image"
+                    onerror="
+                      this.style.display='none'
+                    "
+                  >
+                `
+                : `
+                  <div class="image-placeholder">
+                    📷
+                  </div>
+                `
+            }
 
-          ${
-            discount
-              ? `<p>🔥 Discount: ${discount}%</p>`
-              : ""
-          }
+            <h3>
+              ${escapeHtml(
+                product.name
+              )}
+            </h3>
 
-          ${
-            product.colors?.length
-              ? `<p>🎨 Colors: ${escapeHtml(
-                  product.colors.join(", ")
-                )}</p>`
-              : ""
-          }
+            <p>
+              Category:
+              <strong>
+                ${escapeHtml(
+                  categoryName(
+                    product.cat ||
+                    product.category
+                  )
+                )}
+              </strong>
+            </p>
 
-          ${
-            product.sizes?.length
-              ? `<p>📏 Sizes: ${escapeHtml(
-                  product.sizes.join(", ")
-                )}</p>`
-              : ""
-          }
+            <p>
+              Price:
+              <strong>
+                ৳${price}
+              </strong>
+            </p>
 
-          <div class="button-row">
+            ${
+              oldPrice
+                ? `
+                  <p class="old-price">
+                    Old Price:
+                    ৳${oldPrice}
+                  </p>
+                `
+                : ""
+            }
 
-            <button
-              class="secondary-btn"
-              onclick="editProduct('${product.id}')">
-              ✏️ Edit
-            </button>
+            ${
+              discount
+                ? `
+                  <p>
+                    🔥 Discount:
+                    ${discount}%
+                  </p>
+                `
+                : ""
+            }
 
-            <button
-              class="danger-btn"
-              onclick="deleteProduct('${product.id}')">
-              🗑️ Delete
-            </button>
+            ${
+              colors.length
+                ? `
+                  <p>
+                    🎨 Colors:
+                    ${escapeHtml(
+                      colors.join(", ")
+                    )}
+                  </p>
+                `
+                : ""
+            }
+
+            ${
+              sizes.length
+                ? `
+                  <p>
+                    📏 Sizes:
+                    ${escapeHtml(
+                      sizes.join(", ")
+                    )}
+                  </p>
+                `
+                : ""
+            }
+
+            ${
+              product.youtube
+                ? `
+                  <p>
+                    ▶️ YouTube Video Added
+                  </p>
+                `
+                : ""
+            }
+
+            <div class="button-row">
+
+              <button
+                class="secondary-btn"
+                onclick="
+                  editProduct(
+                    '${escapeJs(
+                      product.id
+                    )}'
+                  )
+                "
+              >
+                ✏️ Edit
+              </button>
+
+              <button
+                class="danger-btn"
+                onclick="
+                  deleteProduct(
+                    '${escapeJs(
+                      product.id
+                    )}'
+                  )
+                "
+              >
+                🗑️ Delete
+              </button>
+
+            </div>
 
           </div>
-
-        </div>
-      `;
-
-    }).join("");
+        `;
+      })
+      .join("");
 }
 
 
@@ -394,12 +848,22 @@ function renderProducts() {
 function getOrders() {
 
   const saved =
-    localStorage.getItem(ORDER_KEY);
+    localStorage.getItem(
+      ORDER_KEY
+    );
 
-  if (!saved) return [];
+  if (!saved) {
+    return [];
+  }
 
   try {
-    return JSON.parse(saved);
+    const orders =
+      JSON.parse(saved);
+
+    return Array.isArray(orders)
+      ? orders
+      : [];
+
   } catch (error) {
     return [];
   }
@@ -411,6 +875,92 @@ function saveOrders(orders) {
   localStorage.setItem(
     ORDER_KEY,
     JSON.stringify(orders)
+  );
+    }
+/* =========================
+   ORDER HELPERS
+========================= */
+
+function getCustomerName(order) {
+
+  return (
+    order.name ||
+    order.customer?.name ||
+    ""
+  );
+}
+
+
+function getCustomerPhone(order) {
+
+  return (
+    order.phone ||
+    order.mobile ||
+    order.customer?.mobile ||
+    ""
+  );
+}
+
+
+function getCustomerAddress(order) {
+
+  return (
+    order.address ||
+    order.customer?.address ||
+    ""
+  );
+}
+
+
+function getProductName(order) {
+
+  if (
+    typeof order.product === "string"
+  ) {
+    return order.product;
+  }
+
+  return (
+    order.product?.name ||
+    order.productName ||
+    ""
+  );
+}
+
+
+function getProductImage(order) {
+
+  if (
+    order.product &&
+    typeof order.product === "object"
+  ) {
+    return (
+      order.product.image ||
+      order.productImage ||
+      ""
+    );
+  }
+
+  return order.productImage || "";
+}
+
+
+function getQuantity(order) {
+
+  return (
+    order.qty ||
+    order.quantity ||
+    1
+  );
+}
+
+
+function getPayment(order) {
+
+  return (
+    order.payment ||
+    order.paymentMethod ||
+    "COD"
   );
 }
 
@@ -424,10 +974,16 @@ function renderOrders() {
   const orders = getOrders();
 
   const container =
-    document.getElementById("ordersGrid");
+    document.getElementById(
+      "ordersGrid"
+    );
 
   const count =
-    document.getElementById("orderCount");
+    document.getElementById(
+      "orderCount"
+    );
+
+  if (!container) return;
 
   if (count) {
     count.textContent =
@@ -439,7 +995,10 @@ function renderOrders() {
     container.innerHTML = `
       <div class="empty-card">
         <h3>📋 No Orders</h3>
-        <p>Customer order করলে এখানে দেখা যাবে।</p>
+        <p>
+          Customer order করলে
+          এখানে দেখা যাবে।
+        </p>
       </div>
     `;
 
@@ -447,161 +1006,274 @@ function renderOrders() {
   }
 
   container.innerHTML =
-    orders.slice().reverse().map(order => {
+    orders
+      .slice()
+      .reverse()
+      .map(function(order) {
 
-      return `
-        <div class="admin-card">
+        const customerName =
+          getCustomerName(order);
 
-          <h3>🧾 Order #${escapeHtml(
-            String(order.id || "")
-          )}</h3>
+        const phone =
+          getCustomerPhone(order);
 
-          <p>
-            📅 ${escapeHtml(
-              order.date || ""
-            )}
-          </p>
+        const address =
+          getCustomerAddress(order);
 
-          <hr>
+        const productName =
+          getProductName(order);
 
-          <p>
-            👤 <strong>Customer:</strong>
-            ${escapeHtml(
-              order.customer?.name ||
-              order.name ||
-              ""
-            )}
-          </p>
+        const quantity =
+          getQuantity(order);
 
-          <p>
-            📱 <strong>Mobile:</strong>
-            ${escapeHtml(
-              order.customer?.mobile ||
-              order.mobile ||
-              ""
-            )}
-          </p>
+        const payment =
+          getPayment(order);
 
-          <p>
-            📍 <strong>Address:</strong>
-            ${escapeHtml(
-              order.customer?.address ||
-              order.address ||
-              ""
-            )}
-          </p>
+        return `
+          <div class="admin-card">
 
-          <hr>
+            <h3>
+              🧾 Order #
+              ${escapeHtml(
+                String(
+                  order.id || ""
+                )
+              )}
+            </h3>
 
-          <p>
-            🛍️ <strong>Product:</strong>
-            ${escapeHtml(
-              order.product?.name ||
-              order.productName ||
-              ""
-            )}
-          </p>
+            <p>
+              📅
+              ${escapeHtml(
+                order.date || ""
+              )}
+            </p>
 
-          <p>
-            🔢 <strong>Quantity:</strong>
-            ${order.quantity || 1}
-          </p>
+            <hr>
 
-          ${
-            order.color
-              ? `<p>🎨 Color: ${escapeHtml(order.color)}</p>`
-              : ""
-          }
+            <p>
+              👤
+              <strong>
+                Customer:
+              </strong>
+              ${escapeHtml(
+                customerName
+              )}
+            </p>
 
-          ${
-            order.size
-              ? `<p>📏 Size: ${escapeHtml(order.size)}</p>`
-              : ""
-          }
+            <p>
+              📱
+              <strong>
+                Mobile:
+              </strong>
+              ${escapeHtml(
+                phone
+              )}
+            </p>
 
-          <p>
-            💰 <strong>Total:</strong>
-            ৳${order.total || 0}
-          </p>
+            <p>
+              📍
+              <strong>
+                Address:
+              </strong>
+              ${escapeHtml(
+                address
+              )}
+            </p>
 
-          <p>
-            💳 <strong>Payment:</strong>
-            ${escapeHtml(
-              order.paymentMethod || "COD"
-            )}
-          </p>
+            <hr>
 
-          ${
-            order.source
-              ? `<p>
-                  📣 <strong>Source:</strong>
-                  ${escapeHtml(order.source)}
-                </p>`
-              : ""
-          }
+            <p>
+              🛍️
+              <strong>
+                Product:
+              </strong>
+              ${escapeHtml(
+                productName
+              )}
+            </p>
 
-          <label><strong>Order Status</strong></label>
+            <p>
+              🔢
+              <strong>
+                Quantity:
+              </strong>
+              ${quantity}
+            </p>
 
-          <select
-            onchange="updateStatus('${order.id}', this.value)">
+            ${
+              order.color
+                ? `
+                  <p>
+                    🎨 Color:
+                    ${escapeHtml(
+                      order.color
+                    )}
+                  </p>
+                `
+                : ""
+            }
 
-            ${statusOption(
-              "Pending",
-              order.status
-            )}
+            ${
+              order.size
+                ? `
+                  <p>
+                    📏 Size:
+                    ${escapeHtml(
+                      order.size
+                    )}
+                  </p>
+                `
+                : ""
+            }
 
-            ${statusOption(
-              "Confirmed",
-              order.status
-            )}
+            <p>
+              💰
+              <strong>
+                Product Total:
+              </strong>
+              ৳${Number(
+                order.productTotal ||
+                order.price ||
+                0
+              )}
+            </p>
 
-            ${statusOption(
-              "Processing",
-              order.status
-            )}
+            <p>
+              🚚
+              <strong>
+                Delivery:
+              </strong>
+              ৳${Number(
+                order.shipping || 0
+              )}
+            </p>
 
-            ${statusOption(
-              "Shipped",
-              order.status
-            )}
+            <p>
+              💰
+              <strong>
+                Total:
+              </strong>
+              ৳${Number(
+                order.total || 0
+              )}
+            </p>
 
-            ${statusOption(
-              "Delivered",
-              order.status
-            )}
+            <p>
+              💳
+              <strong>
+                Payment:
+              </strong>
+              ${escapeHtml(
+                payment
+              )}
+            </p>
 
-            ${statusOption(
-              "Cancelled",
-              order.status
-            )}
+            ${
+              order.source
+                ? `
+                  <p>
+                    📣
+                    <strong>
+                      Source:
+                    </strong>
+                    ${escapeHtml(
+                      order.source
+                    )}
+                  </p>
+                `
+                : ""
+            }
 
-            ${statusOption(
-              "Returned",
-              order.status
-            )}
+            <label>
+              <strong>
+                Order Status
+              </strong>
+            </label>
 
-          </select>
+            <select
+              onchange="
+                updateStatus(
+                  '${escapeJs(
+                    order.id
+                  )}',
+                  this.value
+                )
+              "
+            >
 
-          <div class="button-row">
+              ${statusOption(
+                "Pending",
+                order.status
+              )}
 
-            <button
-              class="primary-btn"
-              onclick="printOrder('${order.id}', false)">
-              🖨️ Customer Form
-            </button>
+              ${statusOption(
+                "Confirmed",
+                order.status
+              )}
 
-            <button
-              class="secondary-btn"
-              onclick="printOrder('${order.id}', true)">
-              📦 Packing Slip
-            </button>
+              ${statusOption(
+                "Processing",
+                order.status
+              )}
+
+              ${statusOption(
+                "Shipped",
+                order.status
+              )}
+
+              ${statusOption(
+                "Delivered",
+                order.status
+              )}
+
+              ${statusOption(
+                "Cancelled",
+                order.status
+              )}
+
+              ${statusOption(
+                "Returned",
+                order.status
+              )}
+
+            </select>
+
+            <div class="button-row">
+
+              <button
+                class="primary-btn"
+                onclick="
+                  printOrder(
+                    '${escapeJs(
+                      order.id
+                    )}',
+                    false
+                  )
+                "
+              >
+                🖨️ Customer Form
+              </button>
+
+              <button
+                class="secondary-btn"
+                onclick="
+                  printOrder(
+                    '${escapeJs(
+                      order.id
+                    )}',
+                    true
+                  )
+                "
+              >
+                📦 Packing Slip
+              </button>
+
+            </div>
 
           </div>
-
-        </div>
-      `;
-
-    }).join("");
+        `;
+      })
+      .join("");
 }
 
 
@@ -609,70 +1281,113 @@ function renderOrders() {
    STATUS
 ========================= */
 
-function statusOption(value, current) {
+function statusOption(
+  value,
+  current
+) {
 
   return `
     <option
-      value="${value}"
-      ${current === value ? "selected" : ""}>
-      ${value}
+      value="${escapeHtml(
+        value
+      )}"
+      ${
+        String(current) ===
+        String(value)
+          ? "selected"
+          : ""
+      }
+    >
+      ${escapeHtml(value)}
     </option>
   `;
 }
 
 
-function updateStatus(id, status) {
+function updateStatus(
+  id,
+  status
+) {
 
-  const orders = getOrders();
+  const orders =
+    getOrders();
 
   const order =
     orders.find(
-      o => String(o.id) === String(id)
+      o =>
+        String(o.id) ===
+        String(id)
     );
 
-  if (!order) return;
+  if (!order) {
+    alert(
+      "Order পাওয়া যায়নি"
+    );
+    return;
+  }
 
   order.status = status;
 
   saveOrders(orders);
 
   renderOrders();
-}
-
-
+    }
 /* =========================
    PRINT ORDER
 ========================= */
 
-function printOrder(id, packing = false) {
+function printOrder(
+  id,
+  packing = false
+) {
 
-  const orders = getOrders();
+  const orders =
+    getOrders();
 
   const order =
     orders.find(
-      o => String(o.id) === String(id)
+      o =>
+        String(o.id) ===
+        String(id)
     );
 
   if (!order) {
-    alert("Order পাওয়া যায়নি");
+    alert(
+      "Order পাওয়া যায়নি"
+    );
     return;
   }
-
-  const product =
-    order.product || {};
-
-  const customer =
-    order.customer || {};
 
   const title =
     packing
       ? "Packing Slip"
       : "Customer Delivery Form";
 
-  const image =
-    product.image ||
-    order.productImage ||
-    "";
+  const customerName =
+    getCustomerName(order);
+
+  const customerPhone =
+    getCustomerPhone(order);
+
+  const customerAddress =
+    getCustomerAddress(order);
+
+  const productName =
+    getProductName(order);
+
+  const productImage =
+    getProductImage(order);
+
+  const quantity =
+    getQuantity(order);
+
+  const payment =
+    getPayment(order);
+
+  const logo =
+    localStorage.getItem(
+      "afh_logo"
+    );
 
   const printWindow =
     window.open(
@@ -680,6 +1395,13 @@ function printOrder(id, packing = false) {
       "_blank",
       "width=800,height=900"
     );
+
+  if (!printWindow) {
+    alert(
+      "Print window খুলতে পারেনি। Browser popup permission check করুন।"
+    );
+    return;
+  }
 
   printWindow.document.write(`
 <!DOCTYPE html>
@@ -689,7 +1411,9 @@ function printOrder(id, packing = false) {
 
 <meta charset="UTF-8">
 
-<title>${title}</title>
+<title>
+${escapeHtml(title)}
+</title>
 
 <style>
 
@@ -746,7 +1470,8 @@ table {
   border-collapse: collapse;
 }
 
-td, th {
+td,
+th {
   border: 1px solid #999;
   padding: 8px;
   text-align: left;
@@ -777,9 +1502,11 @@ td, th {
 }
 
 @media print {
+
   .print-btn {
     display: none;
   }
+
 }
 
 </style>
@@ -792,22 +1519,33 @@ td, th {
 
 <button
   class="print-btn"
-  onclick="window.print()">
+  onclick="window.print()"
+>
   🖨️ Print
 </button>
 
 <div class="header">
 
 ${
-  localStorage.getItem("afh_logo")
-    ? `<img class="logo"
-        src="${localStorage.getItem("afh_logo")}">`
+  logo
+    ? `
+      <img
+        class="logo"
+        src="${escapeHtml(
+          logo
+        )}"
+      >
+    `
     : ""
 }
 
-<h1>Arif Fashion House</h1>
+<h1>
+Arif Fashion House
+</h1>
 
-<h2>${title}</h2>
+<h2>
+${escapeHtml(title)}
+</h2>
 
 </div>
 
@@ -815,55 +1553,100 @@ ${
 <div class="info">
 
 <div class="box">
-<strong>Order ID:</strong><br>
-${escapeHtml(String(order.id || ""))}
-</div>
 
-<div class="box">
-<strong>Date:</strong><br>
-${escapeHtml(order.date || "")}
-</div>
+<strong>
+Order ID:
+</strong>
 
-<div class="box">
-<strong>Status:</strong><br>
-${escapeHtml(order.status || "Pending")}
-</div>
+<br>
 
-<div class="box">
-<strong>Payment:</strong><br>
-${escapeHtml(order.paymentMethod || "COD")}
-</div>
-
-</div>
-
-
-<div class="box">
-
-<h3>👤 Customer Information</h3>
-
-<strong>Name:</strong>
 ${escapeHtml(
-  customer.name ||
-  order.name ||
-  ""
+  String(order.id || "")
+)}
+
+</div>
+
+
+<div class="box">
+
+<strong>
+Date:
+</strong>
+
+<br>
+
+${escapeHtml(
+  order.date || ""
+)}
+
+</div>
+
+
+<div class="box">
+
+<strong>
+Status:
+</strong>
+
+<br>
+
+${escapeHtml(
+  order.status ||
+  "Pending"
+)}
+
+</div>
+
+
+<div class="box">
+
+<strong>
+Payment:
+</strong>
+
+<br>
+
+${escapeHtml(
+  payment
+)}
+
+</div>
+
+</div>
+
+
+<div class="box">
+
+<h3>
+👤 Customer Information
+</h3>
+
+<strong>
+Name:
+</strong>
+
+${escapeHtml(
+  customerName
 )}
 
 <br><br>
 
-<strong>Mobile:</strong>
+<strong>
+Mobile:
+</strong>
+
 ${escapeHtml(
-  customer.mobile ||
-  order.mobile ||
-  ""
+  customerPhone
 )}
 
 <br><br>
 
-<strong>Address:</strong>
+<strong>
+Address:
+</strong>
+
 ${escapeHtml(
-  customer.address ||
-  order.address ||
-  ""
+  customerAddress
 )}
 
 </div>
@@ -871,13 +1654,20 @@ ${escapeHtml(
 
 <div class="box">
 
-<h3>📦 Product Information</h3>
+<h3>
+📦 Product Information
+</h3>
 
 ${
-  image
-    ? `<img
-        src="${escapeHtml(image)}"
-        class="product-image">`
+  productImage
+    ? `
+      <img
+        src="${escapeHtml(
+          productImage
+        )}"
+        class="product-image"
+      >
+    `
     : ""
 }
 
@@ -886,67 +1676,126 @@ ${
 <table>
 
 <tr>
-<th>Product</th>
+
+<th>
+Product
+</th>
+
 <td>
 ${escapeHtml(
-  product.name ||
-  order.productName ||
-  ""
+  productName
 )}
 </td>
+
 </tr>
 
+
 <tr>
-<th>Product Code</th>
+
+<th>
+Product Code
+</th>
+
 <td>
 ${escapeHtml(
-  product.code ||
   order.productCode ||
+  order.product?.code ||
   "N/A"
 )}
 </td>
+
 </tr>
 
+
 <tr>
-<th>Color</th>
+
+<th>
+Color
+</th>
+
 <td>
-${escapeHtml(order.color || "N/A")}
+${escapeHtml(
+  order.color ||
+  "N/A"
+)}
 </td>
+
 </tr>
 
+
 <tr>
-<th>Size / Variant</th>
+
+<th>
+Size / Variant
+</th>
+
 <td>
-${escapeHtml(order.size || "N/A")}
+${escapeHtml(
+  order.size ||
+  "N/A"
+)}
 </td>
+
 </tr>
 
+
 <tr>
-<th>Quantity</th>
+
+<th>
+Quantity
+</th>
+
 <td>
-${order.quantity || 1}
+${quantity}
 </td>
+
 </tr>
 
+
 <tr>
-<th>Product Price</th>
+
+<th>
+Product Price
+</th>
+
 <td>
-৳${order.productTotal || order.price || 0}
+৳${Number(
+  order.productTotal ||
+  order.price ||
+  0
+)}
 </td>
+
 </tr>
 
+
 <tr>
-<th>Delivery Charge</th>
+
+<th>
+Delivery Charge
+</th>
+
 <td>
-৳${order.shipping || 0}
+৳${Number(
+  order.shipping || 0
+)}
 </td>
+
 </tr>
 
+
 <tr>
-<th>Total</th>
+
+<th>
+Total
+</th>
+
 <td class="total">
-৳${order.total || 0}
+৳${Number(
+  order.total || 0
+)}
 </td>
+
 </tr>
 
 </table>
@@ -956,44 +1805,53 @@ ${order.quantity || 1}
 
 ${
   !packing
+
     ? `
-<div class="box">
+      <div class="box">
 
-<strong>Order Source:</strong>
-${escapeHtml(order.source || "Direct Website")}
+        <strong>
+          Order Source:
+        </strong>
 
-</div>
+        ${escapeHtml(
+          order.source ||
+          "Direct Website"
+        )}
 
-<div class="signatures">
+      </div>
 
-<div class="signature">
-Customer Signature
-</div>
+      <div class="signatures">
 
-<div class="signature">
-Delivery Person Signature
-</div>
+        <div class="signature">
+          Customer Signature
+        </div>
 
-</div>
-`
+        <div class="signature">
+          Delivery Person Signature
+        </div>
+
+      </div>
+    `
+
     : `
-<div class="signatures">
+      <div class="signatures">
 
-<div class="signature">
-Packed By
-</div>
+        <div class="signature">
+          Packed By
+        </div>
 
-<div class="signature">
-Checked By
-</div>
+        <div class="signature">
+          Checked By
+        </div>
 
-</div>
-`
+      </div>
+    `
 }
 
 </div>
 
 </body>
+
 </html>
   `);
 
@@ -1002,17 +1860,58 @@ Checked By
 
 
 /* =========================
-   SECURITY / HTML SAFETY
+   SECURITY
 ========================= */
 
 function escapeHtml(value) {
 
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+  return String(
+    value ?? ""
+  )
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+    .replace(
+      /</g,
+      "&lt;"
+    )
+    .replace(
+      />/g,
+      "&gt;"
+    )
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+    .replace(
+      /'/g,
+      "&#039;"
+    );
+}
+
+
+function escapeJs(value) {
+
+  return String(
+    value ?? ""
+  )
+    .replace(
+      /\\/g,
+      "\\\\"
+    )
+    .replace(
+      /'/g,
+      "\\'"
+    )
+    .replace(
+      /"/g,
+      '\\"'
+    )
+    .replace(
+      /\r?\n/g,
+      "\\n"
+    );
 }
 
 
@@ -1022,7 +1921,7 @@ function escapeHtml(value) {
 
 document.addEventListener(
   "DOMContentLoaded",
-  function () {
+  function() {
 
     loadSettings();
 
