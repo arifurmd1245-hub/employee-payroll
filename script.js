@@ -1,3 +1,8 @@
+/* =========================================================
+   ARIF FASHION HOUSE - STORE SCRIPT
+   Color + Size + Quantity + Checkout + Orders
+   ========================================================= */
+
 const DATA_KEY = "afh_v3_data";
 const ORDER_KEY = "afh_orders";
 
@@ -9,32 +14,31 @@ let selectedQty = 1;
 
 /* =========================
    DATA
-========================= */
+   ========================= */
 
 function getData() {
   try {
-    const saved = localStorage.getItem(DATA_KEY);
+    const raw = localStorage.getItem(DATA_KEY);
 
-    if (!saved) {
+    if (!raw) {
       return {
         settings: {},
         products: []
       };
     }
 
-    const data = JSON.parse(saved);
+    const data = JSON.parse(raw);
 
-    if (!data.settings) {
-      data.settings = {};
-    }
-
-    if (!Array.isArray(data.products)) {
-      data.products = [];
-    }
+    data.settings = data.settings || {};
+    data.products = Array.isArray(data.products)
+      ? data.products.map(normalizeProduct)
+      : [];
 
     return data;
 
   } catch (error) {
+    console.error("Data error:", error);
+
     return {
       settings: {},
       products: []
@@ -43,274 +47,238 @@ function getData() {
 }
 
 
-function normalizeProduct(product) {
+/* =========================
+   PRODUCT NORMALIZER
+   ========================= */
+
+function normalizeProduct(p) {
+
+  p = p || {};
+
+  let colors = p.colors;
+  let sizes = p.sizes;
+
+  /* Color support */
+  if (typeof colors === "string") {
+    colors = colors
+      .split(",")
+      .map(x => x.trim())
+      .filter(Boolean);
+  }
+
+  if (!Array.isArray(colors)) {
+    colors = [];
+  }
+
+  /* Size support */
+  if (typeof sizes === "string") {
+    sizes = sizes
+      .split(",")
+      .map(x => x.trim())
+      .filter(Boolean);
+  }
+
+  if (!Array.isArray(sizes)) {
+    sizes = [];
+  }
 
   return {
-    id: product.id || "",
-    name: product.name || "Product",
+    ...p,
 
-    cat: String(
-      product.cat ||
-      product.category ||
-      "other"
-    ).toLowerCase(),
+    id: p.id || p.productId || ("p-" + Date.now()),
 
-    image: product.image || "",
+    name: p.name || p.productName || "Product",
 
-    price: Number(
-      product.price || 0
-    ),
+    image: p.image || p.productImage || "",
 
-    old: Number(
-      product.old ??
-      product.oldPrice ??
-      0
-    ),
+    category:
+      p.category ||
+      p.cat ||
+      "men",
 
-    colors: Array.isArray(product.colors)
-      ? product.colors
-      : [],
+    cat:
+      p.cat ||
+      p.category ||
+      "men",
 
-    sizes: Array.isArray(product.sizes)
-      ? product.sizes
-      : [],
+    price:
+      Number(p.price || p.productPrice || 0),
 
-    youtube: product.youtube || "",
+    oldPrice:
+      Number(p.oldPrice || p.old || p.productOldPrice || 0),
+
+    old:
+      Number(p.old || p.oldPrice || p.productOldPrice || 0),
+
+    colors: colors,
+
+    sizes: sizes,
+
+    youtube:
+      p.youtube ||
+      p.youtubeLink ||
+      "",
+
+    description:
+      p.description ||
+      p.desc ||
+      "",
 
     desc:
-      product.desc ??
-      product.description ??
+      p.desc ||
+      p.description ||
       ""
   };
 }
 
 
-/* =========================
-   HTML SECURITY
-========================= */
-
-function escapeHtml(value) {
-
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+function getProducts() {
+  const data = getData();
+  return data.products || [];
 }
 
 
 /* =========================
    SETTINGS
-========================= */
+   ========================= */
 
 function loadSettings() {
 
   const data = getData();
   const s = data.settings || {};
 
-  const brand =
-    document.getElementById("brandName");
-
-  const hero =
-    document.getElementById("heroTitle");
-
-  const warning =
-    document.getElementById("warningText");
-
-  if (brand) {
-    brand.textContent =
-      s.brand ||
-      "Arif Fashion House";
+  const brand = document.getElementById("brandName");
+  if (brand && s.brand) {
+    brand.textContent = s.brand;
   }
 
-  if (hero) {
-    hero.textContent =
-      s.hero ||
-      "Style • Quality • Reliable Service";
+  const shippingEl = document.getElementById("shippingCharge");
+
+  if (shippingEl && s.shipping !== undefined) {
+    shippingEl.value = s.shipping;
   }
 
-  if (warning) {
-    warning.textContent =
-      s.warning ||
-      "অর্ডার করার আগে আপনার নাম, মোবাইল নম্বর, ঠিকানা এবং পণ্যের তথ্য যাচাই করুন।";
+  const hero = document.getElementById("heroText");
+
+  if (hero && s.hero) {
+    hero.textContent = s.hero;
   }
 }
 
 
 /* =========================
    PRODUCTS
-========================= */
-
-function getProducts() {
-
-  const data = getData();
-
-  return data.products.map(
-    normalizeProduct
-  );
-}
-
-
-function categoryMatch(product, category) {
-
-  if (category === "all") {
-    return true;
-  }
-
-  return (
-    String(product.cat)
-      .toLowerCase() ===
-    String(category)
-      .toLowerCase()
-  );
-}
-
+   ========================= */
 
 function renderProducts(category = "all") {
 
-  const container =
-    document.getElementById("products");
+  const productsContainer =
+    document.getElementById("productGrid") ||
+    document.getElementById("products") ||
+    document.querySelector(".product-grid");
 
-  if (!container) return;
+  if (!productsContainer) return;
 
-  const products =
-    getProducts().filter(
-      product =>
-        categoryMatch(
-          product,
-          category
-        )
-    );
+  const products = getProducts();
 
-  if (!products.length) {
+  const filtered = products.filter(product => {
 
-    container.innerHTML = `
-      <div class="empty-card">
-        <h3>📦 No Products Found</h3>
-        <p>এই category-তে কোনো product নেই।</p>
-      </div>
-    `;
+    if (category === "all") return true;
+
+    const cat = String(
+      product.category ||
+      product.cat ||
+      ""
+    ).toLowerCase();
+
+    return cat === String(category).toLowerCase();
+  });
+
+
+  if (!filtered.length) {
+
+    productsContainer.innerHTML =
+      '<div class="no-products">No products found.</div>';
 
     return;
   }
 
-  container.innerHTML =
-    products.map(function(product) {
 
-      const discount =
-        product.old > product.price
-          ? Math.round(
-              (
-                (product.old - product.price) /
-                product.old
-              ) * 100
-            )
-          : 0;
+  productsContainer.innerHTML = filtered.map(product => {
 
-      return `
-        <div class="product-card">
+    const price = Number(product.price || 0);
+    const oldPrice = Number(product.oldPrice || product.old || 0);
 
+    return `
+      <div class="product-card">
+
+        <div class="product-image-wrap">
           ${
             product.image
-              ? `
-                <img
-                  src="${escapeHtml(product.image)}"
-                  alt="${escapeHtml(product.name)}"
-                  class="product-image"
-                  onerror="this.style.display='none'"
-                >
-              `
-              : `
-                <div class="product-image placeholder">
-                  📷
-                </div>
-              `
+              ? `<img src="${product.image}" class="product-image">`
+              : `<div class="no-image">No Image</div>`
           }
+        </div>
 
-          <div class="product-info">
+        <div class="product-info">
 
-            <h3>
-              ${escapeHtml(product.name)}
-            </h3>
+          <h3>${escapeHtml(product.name)}</h3>
 
-            <div class="price-row">
+          <div class="price-area">
 
-              <strong>
-                ৳${product.price}
-              </strong>
-
-              ${
-                product.old > product.price
-                  ? `
-                    <del>
-                      ৳${product.old}
-                    </del>
-                  `
-                  : ""
-              }
-
-            </div>
+            <span class="price">
+              ৳${price}
+            </span>
 
             ${
-              discount
-                ? `
-                  <span class="discount">
-                    ${discount}% OFF
-                  </span>
-                `
+              oldPrice > price
+                ? `<span class="old-price">৳${oldPrice}</span>`
                 : ""
             }
 
-            <button
-              class="primary"
-              onclick="openCheckout('${escapeHtml(product.id)}')"
-            >
-              🛒 Order Now
-            </button>
-
           </div>
 
-        </div>
-      `;
+          <button
+            class="order-btn"
+            onclick="openCheckout('${product.id}')">
+            Order Now
+          </button>
 
-    }).join("");
+        </div>
+
+      </div>
+    `;
+
+  }).join("");
 }
 
 
 /* =========================
-   CATEGORY BUTTONS
-========================= */
+   CATEGORY
+   ========================= */
 
 function setupCategories() {
 
-  const chips =
-    document.querySelectorAll(
-      ".chip"
-    );
+  const chips = document.querySelectorAll(".chip");
 
-  chips.forEach(function(chip) {
+  chips.forEach(chip => {
 
-    chip.addEventListener(
-      "click",
-      function() {
+    chip.addEventListener("click", function () {
 
-        chips.forEach(
-          c =>
-            c.classList.remove(
-              "active"
-            )
-        );
+      chips.forEach(c =>
+        c.classList.remove("active")
+      );
 
-        chip.classList.add(
-          "active"
-        );
+      this.classList.add("active");
 
-        renderProducts(
-          chip.dataset.cat || "all"
-        );
-      }
-    );
+      const category =
+        this.dataset.category ||
+        this.dataset.cat ||
+        this.getAttribute("data-filter") ||
+        "all";
+
+      renderProducts(category);
+    });
 
   });
 }
@@ -318,299 +286,224 @@ function setupCategories() {
 
 /* =========================
    CHECKOUT
-========================= */
+   ========================= */
 
 function openCheckout(id) {
 
-  const products =
-    getProducts();
+  const products = getProducts();
 
   currentProduct =
-    products.find(
-      p =>
-        String(p.id) ===
-        String(id)
-    );
+    products.find(p => String(p.id) === String(id));
 
   if (!currentProduct) {
 
-    alert(
-      "Product পাওয়া যায়নি।"
-    );
-
+    alert("Product not found.");
     return;
   }
 
-  selectedColor =
-    currentProduct.colors.length
-      ? currentProduct.colors[0]
-      : "";
 
-  selectedSize =
-    currentProduct.sizes.length
-      ? currentProduct.sizes[0]
-      : "";
+  /* IMPORTANT:
+     Color and Size are completely independent.
+  */
+
+  const colors = Array.isArray(currentProduct.colors)
+    ? currentProduct.colors
+    : [];
+
+  const sizes = Array.isArray(currentProduct.sizes)
+    ? currentProduct.sizes
+    : [];
+
+
+  selectedColor = colors.length
+    ? colors[0]
+    : "";
+
+  selectedSize = sizes.length
+    ? sizes[0]
+    : "";
 
   selectedQty = 1;
 
+
   const modal =
-    document.getElementById(
-      "checkoutModal"
-    );
+    document.getElementById("checkoutModal") ||
+    document.getElementById("checkout");
 
-  const summary =
-    document.getElementById(
-      "summaryBox"
-    );
+  if (!modal) {
 
-  if (!modal || !summary) return;
-
-
-  /* PRODUCT SUMMARY */
-
-  summary.innerHTML = `
-
-    ${
-      currentProduct.image
-        ? `
-          <img
-            src="${escapeHtml(
-              currentProduct.image
-            )}"
-            style="
-              width:100px;
-              height:100px;
-              object-fit:cover;
-              border-radius:8px;
-            "
-          >
-        `
-        : ""
-    }
-
-    <h3>
-      ${escapeHtml(
-        currentProduct.name
-      )}
-    </h3>
-
-    <p>
-      Price:
-      <strong>
-        ৳${currentProduct.price}
-      </strong>
-    </p>
-
-    ${
-      currentProduct.colors.length
-        ? `
-          <div>
-            <strong>🎨 Color:</strong>
-
-            <div id="colorOptions"
-                 class="option-group">
-
-              ${currentProduct.colors
-                .map(function(color, index) {
-
-                  return `
-                    <button
-                      type="button"
-                      class="option color-option ${
-                        index === 0
-                          ? "selected"
-                          : ""
-                      }"
-                      data-color="${escapeHtml(color)}"
-                      onclick="selectColor(this)"
-                    >
-                      ${escapeHtml(color)}
-                    </button>
-                  `;
-
-                }).join("")}
-
-            </div>
-          </div>
-        `
-        : ""
-    }
-
-
-    ${
-      currentProduct.sizes.length
-        ? `
-          <div>
-            <strong>📏 Size:</strong>
-
-            <div id="sizeOptions"
-                 class="option-group">
-
-              ${currentProduct.sizes
-                .map(function(size, index) {
-
-                  return `
-                    <button
-                      type="button"
-                      class="option size-option ${
-                        index === 0
-                          ? "selected"
-                          : ""
-                      }"
-                      data-size="${escapeHtml(size)}"
-                      onclick="selectSize(this)"
-                    >
-                      ${escapeHtml(size)}
-                    </button>
-                  `;
-
-                }).join("")}
-
-            </div>
-          </div>
-        `
-        : ""
-    }
-
-
-    <div style="margin-top:15px">
-
-      <strong>
-        Quantity:
-      </strong>
-
-      <div
-        style="
-          display:flex;
-          align-items:center;
-          gap:10px;
-          margin-top:8px;
-        "
-      >
-
-        <button
-          type="button"
-          onclick="changeQty(-1)"
-        >
-          −
-        </button>
-
-        <strong id="qtyValue">
-          1
-        </strong>
-
-        <button
-          type="button"
-          onclick="changeQty(1)"
-        >
-          +
-        </button>
-
-      </div>
-
-    </div>
-
-  `;
-
-
-  const ship =
-    Number(
-      getData().settings?.shipping || 0
-    );
-
-  const shipElement =
-    document.getElementById(
-      "shipCharge"
-    );
-
-  if (shipElement) {
-    shipElement.textContent =
-      "৳" + ship;
+    alert("Checkout section not found.");
+    return;
   }
 
 
-  modal.classList.remove(
-    "hidden"
-  );
+  /* Product name */
+
+  const nameEl =
+    document.getElementById("checkoutProductName");
+
+  if (nameEl) {
+    nameEl.textContent = currentProduct.name;
+  }
+
+
+  /* Product image */
+
+  const imageEl =
+    document.getElementById("checkoutProductImage");
+
+  if (imageEl && currentProduct.image) {
+    imageEl.src = currentProduct.image;
+  }
+
+
+  /* Product price */
+
+  const priceEl =
+    document.getElementById("checkoutPrice");
+
+  if (priceEl) {
+    priceEl.textContent =
+      "৳" + Number(currentProduct.price || 0);
+  }
+
+
+  /* =========================
+     COLOR
+     ========================= */
+
+  const colorBox =
+    document.getElementById("colorOptions");
+
+  if (colorBox) {
+
+    if (colors.length) {
+
+      colorBox.innerHTML = colors.map((color, index) => {
+
+        return `
+          <button
+            type="button"
+            class="color-option ${index === 0 ? "selected" : ""}"
+            data-color="${escapeAttr(color)}"
+            onclick="selectColor(this)">
+            ${escapeHtml(color)}
+          </button>
+        `;
+
+      }).join("");
+
+    } else {
+
+      colorBox.innerHTML =
+        `<span class="option-unavailable">No color available</span>`;
+    }
+  }
+
+
+  /* =========================
+     SIZE
+     ========================= */
+
+  const sizeBox =
+    document.getElementById("sizeOptions");
+
+  if (sizeBox) {
+
+    if (sizes.length) {
+
+      sizeBox.innerHTML = sizes.map((size, index) => {
+
+        return `
+          <button
+            type="button"
+            class="size-option ${index === 0 ? "selected" : ""}"
+            data-size="${escapeAttr(size)}"
+            onclick="selectSize(this)">
+            ${escapeHtml(size)}
+          </button>
+        `;
+
+      }).join("");
+
+    } else {
+
+      sizeBox.innerHTML =
+        `<span class="option-unavailable">No size available</span>`;
+    }
+  }
+
+
+  /* =========================
+     QUANTITY
+     ========================= */
+
+  updateQuantityDisplay();
+
+  modal.classList.remove("hidden");
 
   updatePaymentInfo();
+  updateTotal();
+}
+
+
+/* =========================
+   COLOR SELECT
+   ========================= */
+
+function selectColor(button) {
+
+  if (!button) return;
+
+  const buttons =
+    document.querySelectorAll(".color-option");
+
+  buttons.forEach(btn =>
+    btn.classList.remove("selected")
+  );
+
+  button.classList.add("selected");
+
+  selectedColor =
+    button.dataset.color ||
+    button.textContent.trim();
 
   updateTotal();
 }
 
 
-function closeCheckout() {
-
-  const modal =
-    document.getElementById(
-      "checkoutModal"
-    );
-
-  if (modal) {
-    modal.classList.add(
-      "hidden"
-    );
-  }
-}
-
-
 /* =========================
-   COLOR / SIZE
-========================= */
-
-function selectColor(button) {
-
-  selectedColor =
-    button.dataset.color || "";
-
-  document
-    .querySelectorAll(
-      ".color-option"
-    )
-    .forEach(function(btn) {
-
-      btn.classList.remove(
-        "selected"
-      );
-
-    });
-
-  button.classList.add(
-    "selected"
-  );
-}
-
+   SIZE SELECT
+   ========================= */
 
 function selectSize(button) {
 
-  selectedSize =
-    button.dataset.size || "";
+  if (!button) return;
 
-  document
-    .querySelectorAll(
-      ".size-option"
-    )
-    .forEach(function(btn) {
+  const buttons =
+    document.querySelectorAll(".size-option");
 
-      btn.classList.remove(
-        "selected"
-      );
-
-    });
-
-  button.classList.add(
-    "selected"
+  buttons.forEach(btn =>
+    btn.classList.remove("selected")
   );
+
+  button.classList.add("selected");
+
+  selectedSize =
+    button.dataset.size ||
+    button.textContent.trim();
+
+  updateTotal();
 }
 
 
 /* =========================
    QUANTITY
-========================= */
+   ========================= */
 
-function changeQty(change) {
+function changeQty(amount) {
 
-  selectedQty += change;
+  selectedQty += Number(amount);
 
   if (selectedQty < 1) {
     selectedQty = 1;
@@ -620,166 +513,162 @@ function changeQty(change) {
     selectedQty = 20;
   }
 
-  const qty =
-    document.getElementById(
-      "qtyValue"
-    );
+  updateQuantityDisplay();
+  updateTotal();
+}
 
-  if (qty) {
-    qty.textContent =
-      selectedQty;
+
+function updateQuantityDisplay() {
+
+  const qtyEl =
+    document.getElementById("quantity") ||
+    document.getElementById("orderQty");
+
+  if (qtyEl) {
+    qtyEl.textContent = selectedQty;
   }
 
-  updateTotal();
+  const input =
+    document.querySelector(
+      "#quantityInput, #orderQuantity"
+    );
+
+  if (input) {
+    input.value = selectedQty;
+  }
 }
 
 
 /* =========================
    TOTAL
-========================= */
+   ========================= */
 
 function updateTotal() {
 
   if (!currentProduct) return;
 
+  const data = getData();
+  const settings = data.settings || {};
+
+  const productPrice =
+    Number(currentProduct.price || 0);
+
   const shipping =
-    Number(
-      getData().settings?.shipping || 0
-    );
+    Number(settings.shipping || 0);
 
   const productTotal =
-    currentProduct.price *
-    selectedQty;
+    productPrice * selectedQty;
 
   const total =
-    productTotal +
-    shipping;
+    productTotal + shipping;
 
-  const totalElement =
-    document.getElementById(
-      "orderTotal"
-    );
 
-  if (totalElement) {
+  const productTotalEl =
+    document.getElementById("productTotal");
 
-    totalElement.textContent =
+  if (productTotalEl) {
+    productTotalEl.textContent =
+      "৳" + productTotal;
+  }
+
+
+  const shippingEl =
+    document.getElementById("orderShipping");
+
+  if (shippingEl) {
+    shippingEl.textContent =
+      "৳" + shipping;
+  }
+
+
+  const totalEl =
+    document.getElementById("orderTotal");
+
+  if (totalEl) {
+    totalEl.textContent =
       "৳" + total;
-
   }
 }
 
 
 /* =========================
-   PAYMENT INFO
-========================= */
+   PAYMENT NUMBERS
+   ========================= */
 
 function updatePaymentInfo() {
 
   const data = getData();
-  const s = data.settings || {};
+  const settings = data.settings || {};
 
   let box =
-    document.getElementById(
-      "paymentNumbers"
-    );
+    document.getElementById("paymentNumbers");
+
+
+  const paymentArea =
+    document.getElementById("paymentBox") ||
+    document.querySelector(".payment-box") ||
+    document.querySelector(".payment-methods");
+
+
+  if (!paymentArea) return;
+
 
   if (!box) {
 
-    const paymentBox =
-      document.querySelector(
-        'input[name="payment"]'
-      )?.closest(".box");
+    box = document.createElement("div");
 
-    if (!paymentBox) return;
+    box.id = "paymentNumbers";
 
-    box =
-      document.createElement("div");
-
-    box.id =
-      "paymentNumbers";
-
-    box.style.marginTop =
-      "12px";
-
-    paymentBox.appendChild(box);
+    paymentArea.appendChild(box);
   }
 
 
+  const bkash =
+    settings.bkashNumber ||
+    "";
+
+  const nagad =
+    settings.nagadNumber ||
+    "";
+
+  const rocket =
+    settings.rocketNumber ||
+    "";
+
+
   box.innerHTML = `
+    ${
+      bkash
+        ? `<div><b>bKash:</b> ${escapeHtml(bkash)}</div>`
+        : ""
+    }
 
-    <div
-      style="
-        border:1px solid #ddd;
-        padding:10px;
-        border-radius:8px;
-        background:#fafafa;
-      "
-    >
+    ${
+      nagad
+        ? `<div><b>Nagad:</b> ${escapeHtml(nagad)}</div>`
+        : ""
+    }
 
-      <strong>
-        💳 Advance Payment Numbers
-      </strong>
-
-      ${
-        s.bkashNumber
-          ? `
-            <p>
-              <b>bKash:</b>
-              ${escapeHtml(
-                s.bkashNumber
-              )}
-            </p>
-          `
-          : ""
-      }
-
-      ${
-        s.nagadNumber
-          ? `
-            <p>
-              <b>Nagad:</b>
-              ${escapeHtml(
-                s.nagadNumber
-              )}
-            </p>
-          `
-          : ""
-      }
-
-      ${
-        s.rocketNumber
-          ? `
-            <p>
-              <b>Rocket:</b>
-              ${escapeHtml(
-                s.rocketNumber
-              )}
-            </p>
-          `
-          : ""
-      }
-
-    </div>
-
+    ${
+      rocket
+        ? `<div><b>Rocket:</b> ${escapeHtml(rocket)}</div>`
+        : ""
+    }
   `;
 }
 
 
 /* =========================
-   CONFIRM BUTTON
-========================= */
+   CONFIRM CHECKBOX
+   ========================= */
 
 function toggleConfirm() {
 
   const checkbox =
-    document.getElementById(
-      "confirmCheck"
-    );
+    document.getElementById("confirmCheck");
 
   const button =
-    document.getElementById(
-      "confirmBtn"
-    );
+    document.getElementById("confirmOrder");
 
   if (!checkbox || !button) return;
 
@@ -790,86 +679,89 @@ function toggleConfirm() {
 
 /* =========================
    SUBMIT ORDER
-========================= */
+   ========================= */
 
 function submitOrder() {
 
   if (!currentProduct) {
-
-    alert(
-      "Product পাওয়া যায়নি।"
-    );
-
+    alert("Please select a product.");
     return;
   }
+
 
   const name =
-    document.getElementById(
-      "cName"
-    )?.value.trim();
+    getValue([
+      "customerName",
+      "orderName",
+      "name"
+    ]);
 
   const phone =
-    document.getElementById(
-      "cPhone"
-    )?.value.trim();
+    getValue([
+      "customerPhone",
+      "orderPhone",
+      "phone"
+    ]);
 
   const address =
-    document.getElementById(
-      "cAddress"
-    )?.value.trim();
+    getValue([
+      "customerAddress",
+      "orderAddress",
+      "address"
+    ]);
 
-  const checkbox =
-    document.getElementById(
-      "confirmCheck"
-    );
+
+  const confirmCheck =
+    document.getElementById("confirmCheck");
+
 
   if (!name) {
-    alert(
-      "Customer Name দিন।"
-    );
+
+    alert("Please enter your name.");
     return;
   }
+
 
   if (!phone) {
-    alert(
-      "Mobile Number দিন।"
-    );
+
+    alert("Please enter your mobile number.");
     return;
   }
+
 
   if (!address) {
-    alert(
-      "Full Delivery Address দিন।"
-    );
+
+    alert("Please enter your address.");
     return;
   }
 
-  if (!checkbox?.checked) {
-    alert(
-      "Order confirmation checkbox দিন।"
-    );
+
+  if (confirmCheck && !confirmCheck.checked) {
+
+    alert("Please confirm your order.");
     return;
   }
+
+
+  const data = getData();
+  const settings = data.settings || {};
+
+
+  const price =
+    Number(currentProduct.price || 0);
+
+  const productTotal =
+    price * selectedQty;
+
+  const shipping =
+    Number(settings.shipping || 0);
+
+  const total =
+    productTotal + shipping;
 
 
   const payment =
-    document.querySelector(
-      'input[name="payment"]:checked'
-    )?.value || "COD";
-
-
-  const shipping =
-    Number(
-      getData().settings?.shipping || 0
-    );
-
-  const productTotal =
-    currentProduct.price *
-    selectedQty;
-
-  const total =
-    productTotal +
-    shipping;
+    getSelectedPayment();
 
 
   const order = {
@@ -881,11 +773,14 @@ function submitOrder() {
     date:
       new Date().toLocaleString(),
 
-    name,
+    name:
+      name,
 
-    phone,
+    phone:
+      phone,
 
-    address,
+    address:
+      address,
 
     product:
       currentProduct.name,
@@ -894,7 +789,7 @@ function submitOrder() {
       currentProduct.name,
 
     productImage:
-      currentProduct.image,
+      currentProduct.image || "",
 
     productId:
       currentProduct.id,
@@ -905,6 +800,7 @@ function submitOrder() {
     quantity:
       selectedQty,
 
+    /* IMPORTANT */
     color:
       selectedColor,
 
@@ -912,22 +808,25 @@ function submitOrder() {
       selectedSize,
 
     price:
-      currentProduct.price,
+      price,
 
-    productTotal,
+    productTotal:
+      productTotal,
 
-    shipping,
+    shipping:
+      shipping,
 
-    total,
+    total:
+      total,
 
-    payment,
+    payment:
+      payment,
 
     status:
       "Pending",
 
     source:
       "Direct Website"
-
   };
 
 
@@ -937,19 +836,11 @@ function submitOrder() {
 
     orders =
       JSON.parse(
-        localStorage.getItem(
-          ORDER_KEY
-        )
-      ) || [];
+        localStorage.getItem(ORDER_KEY) || "[]"
+      );
 
-  } catch (error) {
+  } catch (e) {
 
-    orders = [];
-
-  }
-
-
-  if (!Array.isArray(orders)) {
     orders = [];
   }
 
@@ -964,84 +855,123 @@ function submitOrder() {
 
 
   alert(
-    "✅ আপনার order successfully placed হয়েছে!"
+    "Order placed successfully!\n\n" +
+    "Color: " +
+    (selectedColor || "N/A") +
+    "\nSize: " +
+    (selectedSize || "N/A")
   );
 
 
   closeCheckout();
+}
 
 
-  const formFields = [
-    "cName",
-    "cPhone",
-    "cAddress"
-  ];
+/* =========================
+   PAYMENT METHOD
+   ========================= */
 
-  formFields.forEach(
-    function(id) {
+function getSelectedPayment() {
 
-      const field =
-        document.getElementById(id);
+  const checked =
+    document.querySelector(
+      'input[name="payment"]:checked'
+    );
 
-      if (field) {
-        field.value = "";
-      }
+  if (checked) {
+    return checked.value;
+  }
 
+  return "Cash on Delivery";
+}
+
+
+/* =========================
+   CLOSE CHECKOUT
+   ========================= */
+
+function closeCheckout() {
+
+  const modal =
+    document.getElementById("checkoutModal") ||
+    document.getElementById("checkout");
+
+  if (modal) {
+    modal.classList.add("hidden");
+  }
+
+  currentProduct = null;
+  selectedColor = "";
+  selectedSize = "";
+  selectedQty = 1;
+}
+
+
+/* =========================
+   HELPERS
+   ========================= */
+
+function getValue(ids) {
+
+  for (const id of ids) {
+
+    const el =
+      document.getElementById(id);
+
+    if (el && el.value !== undefined) {
+
+      return el.value.trim();
     }
-  );
-
-
-  const check =
-    document.getElementById(
-      "confirmCheck"
-    );
-
-  if (check) {
-    check.checked = false;
   }
 
+  return "";
+}
 
-  const btn =
-    document.getElementById(
-      "confirmBtn"
-    );
 
-  if (btn) {
-    btn.disabled = true;
-  }
+function escapeHtml(value) {
 
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+
+function escapeAttr(value) {
+
+  return escapeHtml(value);
 }
 
 
 /* =========================
    START
-========================= */
+   ========================= */
 
 document.addEventListener(
   "DOMContentLoaded",
-  function() {
+  function () {
 
     loadSettings();
 
-    renderProducts();
+    renderProducts("all");
 
     setupCategories();
 
-    const paymentRadios =
-      document.querySelectorAll(
+
+    document
+      .querySelectorAll(
         'input[name="payment"]'
-      );
+      )
+      .forEach(input => {
 
-    paymentRadios.forEach(
-      function(radio) {
-
-        radio.addEventListener(
+        input.addEventListener(
           "change",
           updatePaymentInfo
         );
 
-      }
-    );
+      });
 
   }
 );
