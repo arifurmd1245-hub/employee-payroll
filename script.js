@@ -1,758 +1,319 @@
-const KEY = "afh_v3_data";
+const DATA_KEY = "afh_v3_data";
+const ORDER_KEY = "afh_orders";
+
+let currentProduct = null;
+let selectedColor = "";
+let selectedSize = "";
+let selectedQty = 1;
 
 
-const defaultData = {
-
-  settings: {
-
-    brand: "Arif Fashion House",
-
-    hero: "Style • Quality • Reliable Service",
-
-    shipping: 80,
-
-    cod: true,
-
-    advance: true,
-
-    warning:
-      "আপনার অর্ডারটি নিশ্চিত করার আগে অনুগ্রহ করে পণ্য, সাইজ/কালার, ঠিকানা ও মোবাইল নম্বর ভালোভাবে যাচাই করুন। আপনি অর্ডারটি গ্রহণ করতে পারবেন—এটি নিশ্চিত হয়ে তারপর Confirm Order করুন।",
-
-    bkashEnabled: true,
-    bkashNumber: "",
-
-    nagadEnabled: true,
-    nagadNumber: "",
-
-    rocketEnabled: true,
-    rocketNumber: ""
-
-  },
-
-
-  products: [
-
-    {
-      id: "p1",
-      name: "Premium T-Shirt",
-      cat: "men",
-      category: "men",
-      price: 650,
-      old: 800,
-      oldPrice: 800,
-      colors: ["Black", "Blue"],
-      sizes: ["M", "L", "XL"],
-      image: "",
-      desc: "Comfortable premium cotton T-shirt.",
-      description: "Comfortable premium cotton T-shirt."
-    },
-
-
-    {
-      id: "p2",
-      name: "Ladies Three Piece",
-      cat: "women",
-      category: "women",
-      price: 1250,
-      old: 1500,
-      oldPrice: 1500,
-      colors: ["Black", "Blue", "Red"],
-      sizes: [],
-      image: "",
-      desc: "Stylish three piece for everyday fashion.",
-      description: "Stylish three piece for everyday fashion."
-    }
-
-  ]
-
-};
-
+/* =========================
+   DATA
+========================= */
 
 function getData() {
-
-  const saved =
-    localStorage.getItem(KEY);
-
-
-  if (!saved) {
-
-    localStorage.setItem(
-      KEY,
-      JSON.stringify(defaultData)
-    );
-
-    return defaultData;
-
-  }
-
-
   try {
+    const saved = localStorage.getItem(DATA_KEY);
 
-    const data =
-      JSON.parse(saved);
+    if (!saved) {
+      return {
+        settings: {},
+        products: []
+      };
+    }
 
+    const data = JSON.parse(saved);
 
     if (!data.settings) {
       data.settings = {};
     }
 
-
-    if (!data.products) {
+    if (!Array.isArray(data.products)) {
       data.products = [];
     }
-
-
-    /*
-      Repair category format
-    */
-
-    data.products.forEach(
-      function(product) {
-
-        if (!product.cat) {
-
-          product.cat =
-            String(
-              product.category ||
-              "other"
-            ).toLowerCase();
-
-        }
-
-
-        if (!product.category) {
-
-          product.category =
-            String(
-              product.cat ||
-              "other"
-            ).toLowerCase();
-
-        }
-
-
-        if (product.old === undefined) {
-
-          product.old =
-            Number(
-              product.oldPrice ||
-              0
-            );
-
-        }
-
-
-        if (product.oldPrice === undefined) {
-
-          product.oldPrice =
-            Number(
-              product.old ||
-              0
-            );
-
-        }
-
-
-        if (!product.desc) {
-
-          product.desc =
-            product.description ||
-            "";
-
-        }
-
-
-        if (!product.description) {
-
-          product.description =
-            product.desc ||
-            "";
-
-        }
-
-      }
-    );
-
-
-    /*
-      Restore Premium T-Shirt
-    */
-
-    const hasPremium =
-      data.products.some(
-        function(product) {
-
-          return (
-            product.id === "p1" ||
-            String(
-              product.name
-            ).toLowerCase() ===
-              "premium t-shirt"
-          );
-
-        }
-      );
-
-
-    if (!hasPremium) {
-
-      data.products.unshift(
-        defaultData.products[0]
-      );
-
-    }
-
-
-    /*
-      Payment defaults
-    */
-
-    if (
-      data.settings.bkashEnabled ===
-      undefined
-    ) {
-
-      data.settings.bkashEnabled =
-        true;
-
-    }
-
-
-    if (
-      data.settings.nagadEnabled ===
-      undefined
-    ) {
-
-      data.settings.nagadEnabled =
-        true;
-
-    }
-
-
-    if (
-      data.settings.rocketEnabled ===
-      undefined
-    ) {
-
-      data.settings.rocketEnabled =
-        true;
-
-    }
-
-
-    if (
-      data.settings.bkashNumber ===
-      undefined
-    ) {
-
-      data.settings.bkashNumber =
-        "";
-
-    }
-
-
-    if (
-      data.settings.nagadNumber ===
-      undefined
-    ) {
-
-      data.settings.nagadNumber =
-        "";
-
-    }
-
-
-    if (
-      data.settings.rocketNumber ===
-      undefined
-    ) {
-
-      data.settings.rocketNumber =
-        "";
-
-    }
-
-
-    localStorage.setItem(
-      KEY,
-      JSON.stringify(data)
-    );
-
 
     return data;
 
   } catch (error) {
+    return {
+      settings: {},
+      products: []
+    };
+  }
+}
 
-    return defaultData;
 
+function normalizeProduct(product) {
+
+  return {
+    id: product.id || "",
+    name: product.name || "Product",
+
+    cat: String(
+      product.cat ||
+      product.category ||
+      "other"
+    ).toLowerCase(),
+
+    image: product.image || "",
+
+    price: Number(
+      product.price || 0
+    ),
+
+    old: Number(
+      product.old ??
+      product.oldPrice ??
+      0
+    ),
+
+    colors: Array.isArray(product.colors)
+      ? product.colors
+      : [],
+
+    sizes: Array.isArray(product.sizes)
+      ? product.sizes
+      : [],
+
+    youtube: product.youtube || "",
+
+    desc:
+      product.desc ??
+      product.description ??
+      ""
+  };
+}
+
+
+/* =========================
+   HTML SECURITY
+========================= */
+
+function escapeHtml(value) {
+
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+
+/* =========================
+   SETTINGS
+========================= */
+
+function loadSettings() {
+
+  const data = getData();
+  const s = data.settings || {};
+
+  const brand =
+    document.getElementById("brandName");
+
+  const hero =
+    document.getElementById("heroTitle");
+
+  const warning =
+    document.getElementById("warningText");
+
+  if (brand) {
+    brand.textContent =
+      s.brand ||
+      "Arif Fashion House";
   }
 
+  if (hero) {
+    hero.textContent =
+      s.hero ||
+      "Style • Quality • Reliable Service";
+  }
+
+  if (warning) {
+    warning.textContent =
+      s.warning ||
+      "অর্ডার করার আগে আপনার নাম, মোবাইল নম্বর, ঠিকানা এবং পণ্যের তথ্য যাচাই করুন।";
+  }
 }
-
-
-
-function money(number) {
-
-  return (
-    "৳" +
-    Number(
-      number || 0
-    ).toLocaleString("en-BD")
-  );
-
-}
-
-
-
-let selectedProduct = null;
-
-let selectedProductId = "";
-
-let selectedColor = "";
-
-let selectedSize = "";
-
 
 
 /* =========================
    PRODUCTS
 ========================= */
 
-function renderProducts(
-  category = "all"
-) {
+function getProducts() {
 
-  const data =
-    getData();
+  const data = getData();
 
-
-  document.getElementById(
-    "brandName"
-  ).textContent =
-    data.settings.brand ||
-    "Arif Fashion House";
+  return data.products.map(
+    normalizeProduct
+  );
+}
 
 
-  document.getElementById(
-    "heroTitle"
-  ).textContent =
-    data.settings.hero ||
-    "";
+function categoryMatch(product, category) {
+
+  if (category === "all") {
+    return true;
+  }
+
+  return (
+    String(product.cat)
+      .toLowerCase() ===
+    String(category)
+      .toLowerCase()
+  );
+}
 
 
-  const productsBox =
-    document.getElementById(
-      "products"
-    );
+function renderProducts(category = "all") {
 
+  const container =
+    document.getElementById("products");
+
+  if (!container) return;
 
   const products =
-    data.products.filter(
-      function(product) {
-
-        const productCategory =
-          String(
-            product.cat ||
-            product.category ||
-            ""
-          ).toLowerCase();
-
-
-        return (
-          category === "all" ||
-          productCategory ===
-            String(
-              category
-            ).toLowerCase()
-        );
-
-      }
+    getProducts().filter(
+      product =>
+        categoryMatch(
+          product,
+          category
+        )
     );
-
 
   if (!products.length) {
 
-    productsBox.innerHTML =
-      "<p>No products available.</p>";
+    container.innerHTML = `
+      <div class="empty-card">
+        <h3>📦 No Products Found</h3>
+        <p>এই category-তে কোনো product নেই।</p>
+      </div>
+    `;
 
     return;
-
   }
 
-
-  productsBox.innerHTML =
-    products
-      .map(
-        function(product) {
-
-          let discount = "";
-
-
-          const oldPrice =
-            Number(
-              product.old ||
-              product.oldPrice ||
-              0
-            );
-
-
-          if (
-            oldPrice >
-            Number(product.price)
-          ) {
-
-            discount =
-              Math.round(
-                (
-                  1 -
-                  Number(product.price) /
-                    oldPrice
-                ) * 100
-              ) +
-              "% OFF";
-
-          }
-
-
-          let colorsHTML =
-            "";
-
-
-          if (
-            product.colors &&
-            product.colors.length
-          ) {
-
-            colorsHTML = `
-
-              <div>
-
-                <small>
-                  <b>Color:</b>
-                </small>
-
-
-                <div class="options">
-
-                  ${product.colors
-                    .map(
-                      function(color) {
-
-                        return `
-
-                          <button
-                            type="button"
-                            class="option color-option"
-                            onclick="selectColor(
-                              '${product.id}',
-                              '${escapeAttribute(color)}',
-                              this
-                            )">
-
-                            ${escapeHtml(color)}
-
-                          </button>
-
-                        `;
-
-                      }
-                    )
-                    .join("")}
-
-                </div>
-
-              </div>
-
-            `;
-
-          }
-
-
-          let sizesHTML =
-            "";
-
-
-          if (
-            product.sizes &&
-            product.sizes.length
-          ) {
-
-            sizesHTML = `
-
-              <div>
-
-                <small>
-                  <b>Size:</b>
-                </small>
-
-
-                <div class="options">
-
-                  ${product.sizes
-                    .map(
-                      function(size) {
-
-                        return `
-
-                          <button
-                            type="button"
-                            class="option size-option"
-                            onclick="selectSize(
-                              '${product.id}',
-                              '${escapeAttribute(size)}',
-                              this
-                            )">
-
-                            ${escapeHtml(size)}
-
-                          </button>
-
-                        `;
-
-                      }
-                    )
-                    .join("")}
-
-                </div>
-
-              </div>
-
-            `;
-
-          }
-
-
-          return `
-
-            <div
-              class="card"
-              data-product-id="${escapeAttribute(
-                product.id
-              )}"
-            >
-
-
-              <img
-                src="${
-                  product.image ||
-                  "cover.png"
-                }"
-                alt="${escapeHtml(
-                  product.name
-                )}"
-              >
-
-
-              <h3>
-                ${escapeHtml(
-                  product.name
-                )}
-              </h3>
-
-
-              <div>
-
-                <span class="price">
-                  ${money(
-                    product.price
-                  )}
-                </span>
-
-
-                ${
-                  oldPrice
-
-                    ? `<span class="old">
-                        ${money(
-                          oldPrice
-                        )}
-                      </span>`
-
-                    : ""
-                }
-
-
-                ${
-                  discount
-
-                    ? `<span class="discount">
-                        ${discount}
-                      </span>`
-
-                    : ""
-                }
-
-              </div>
-
-
-              <p class="muted">
-                ${escapeHtml(
-                  product.desc ||
-                  product.description ||
-                  ""
-                )}
-              </p>
-
-
-              ${colorsHTML}
-
-
-              ${sizesHTML}
-
-
-              <div
-                style="
-                  display:flex;
-                  gap:7px;
-                  margin-top:10px;
-                "
-              >
-
-                <input
-                  id="qty-${escapeAttribute(
-                    product.id
-                  )}"
-                  type="number"
-                  min="1"
-                  value="1"
-                  style="max-width:80px"
+  container.innerHTML =
+    products.map(function(product) {
+
+      const discount =
+        product.old > product.price
+          ? Math.round(
+              (
+                (product.old - product.price) /
+                product.old
+              ) * 100
+            )
+          : 0;
+
+      return `
+        <div class="product-card">
+
+          ${
+            product.image
+              ? `
+                <img
+                  src="${escapeHtml(product.image)}"
+                  alt="${escapeHtml(product.name)}"
+                  class="product-image"
+                  onerror="this.style.display='none'"
                 >
+              `
+              : `
+                <div class="product-image placeholder">
+                  📷
+                </div>
+              `
+          }
 
+          <div class="product-info">
 
-                <button
-                  class="primary"
-                  onclick="openCheckout(
-                    '${escapeAttribute(
-                      product.id
-                    )}'
-                  )"
-                >
-                  Order Now
-                </button>
+            <h3>
+              ${escapeHtml(product.name)}
+            </h3>
 
-              </div>
+            <div class="price-row">
 
+              <strong>
+                ৳${product.price}
+              </strong>
+
+              ${
+                product.old > product.price
+                  ? `
+                    <del>
+                      ৳${product.old}
+                    </del>
+                  `
+                  : ""
+              }
 
             </div>
 
-          `;
+            ${
+              discount
+                ? `
+                  <span class="discount">
+                    ${discount}% OFF
+                  </span>
+                `
+                : ""
+            }
 
-        }
-      )
-      .join("");
+            <button
+              class="primary"
+              onclick="openCheckout('${escapeHtml(product.id)}')"
+            >
+              🛒 Order Now
+            </button>
 
+          </div>
+
+        </div>
+      `;
+
+    }).join("");
 }
-
 
 
 /* =========================
-   COLOR
+   CATEGORY BUTTONS
 ========================= */
 
-function selectColor(
-  productId,
-  color,
-  button
-) {
+function setupCategories() {
 
-  selectedProductId =
-    productId;
-
-
-  selectedColor =
-    color;
-
-
-  const card =
-    button.closest(
-      ".card"
+  const chips =
+    document.querySelectorAll(
+      ".chip"
     );
 
+  chips.forEach(function(chip) {
 
-  if (!card) return;
+    chip.addEventListener(
+      "click",
+      function() {
 
+        chips.forEach(
+          c =>
+            c.classList.remove(
+              "active"
+            )
+        );
 
-  card
-    .querySelectorAll(
-      ".color-option"
-    )
-    .forEach(
-      function(item) {
+        chip.classList.add(
+          "active"
+        );
 
-        item.style.background =
-          "";
-
-        item.style.color =
-          "";
-
+        renderProducts(
+          chip.dataset.cat || "all"
+        );
       }
     );
 
-
-  button.style.background =
-    "#111";
-
-
-  button.style.color =
-    "#fff";
-
+  });
 }
-
-
-
-/* =========================
-   SIZE
-========================= */
-
-function selectSize(
-  productId,
-  size,
-  button
-) {
-
-  selectedProductId =
-    productId;
-
-
-  selectedSize =
-    size;
-
-
-  const card =
-    button.closest(
-      ".card"
-    );
-
-
-  if (!card) return;
-
-
-  card
-    .querySelectorAll(
-      ".size-option"
-    )
-    .forEach(
-      function(item) {
-
-        item.style.background =
-          "";
-
-        item.style.color =
-          "";
-
-      }
-    );
-
-
-  button.style.background =
-    "#111";
-
-
-  button.style.color =
-    "#fff";
-
-}
-
 
 
 /* =========================
@@ -761,396 +322,451 @@ function selectSize(
 
 function openCheckout(id) {
 
-  const data =
-    getData();
+  const products =
+    getProducts();
 
-
-  const product =
-    data.products.find(
-      function(item) {
-
-        return item.id === id;
-
-      }
+  currentProduct =
+    products.find(
+      p =>
+        String(p.id) ===
+        String(id)
     );
 
-
-  if (!product) {
+  if (!currentProduct) {
 
     alert(
-      "Product not found."
+      "Product পাওয়া যায়নি।"
     );
 
     return;
-
   }
 
+  selectedColor =
+    currentProduct.colors.length
+      ? currentProduct.colors[0]
+      : "";
 
-  /*
-    Important:
-    Reset only when changing to another product.
-  */
+  selectedSize =
+    currentProduct.sizes.length
+      ? currentProduct.sizes[0]
+      : "";
 
-  if (
-    selectedProductId !==
-    id
-  ) {
+  selectedQty = 1;
 
-    selectedColor =
-      "";
-
-    selectedSize =
-      "";
-
-  }
-
-
-  selectedProductId =
-    id;
-
-
-  const quantityInput =
+  const modal =
     document.getElementById(
-      "qty-" + id
+      "checkoutModal"
     );
 
-
-  const quantity =
-    Number(
-      quantityInput
-        ? quantityInput.value
-        : 1
+  const summary =
+    document.getElementById(
+      "summaryBox"
     );
 
-
-  selectedProduct = {
-
-    ...product,
-
-    qty:
-      quantity > 0
-        ? quantity
-        : 1
-
-  };
+  if (!modal || !summary) return;
 
 
-  let optionsText =
-    "";
+  /* PRODUCT SUMMARY */
 
+  summary.innerHTML = `
 
-  if (
-    product.colors &&
-    product.colors.length
-  ) {
-
-    optionsText += `
-
-      <p>
-
-        <b>Color:</b>
-
-        ${
-          selectedColor
-            ? escapeHtml(
-                selectedColor
-              )
-            : "Please select before confirming."
-        }
-
-      </p>
-
-    `;
-
-  }
-
-
-  if (
-    product.sizes &&
-    product.sizes.length
-  ) {
-
-    optionsText += `
-
-      <p>
-
-        <b>Size:</b>
-
-        ${
-          selectedSize
-            ? escapeHtml(
-                selectedSize
-              )
-            : "Please select before confirming."
-        }
-
-      </p>
-
-    `;
-
-  }
-
-
-  /*
-    Payment information
-  */
-
-  let paymentInfo =
-    "";
-
-
-  if (
-    data.settings.advance
-  ) {
-
-    const methods = [];
-
-
-    if (
-      data.settings.bkashEnabled &&
-      data.settings.bkashNumber
-    ) {
-
-      methods.push(
-        "📱 bKash: " +
-        escapeHtml(
-          data.settings.bkashNumber
-        )
-      );
-
+    ${
+      currentProduct.image
+        ? `
+          <img
+            src="${escapeHtml(
+              currentProduct.image
+            )}"
+            style="
+              width:100px;
+              height:100px;
+              object-fit:cover;
+              border-radius:8px;
+            "
+          >
+        `
+        : ""
     }
-
-
-    if (
-      data.settings.nagadEnabled &&
-      data.settings.nagadNumber
-    ) {
-
-      methods.push(
-        "📱 Nagad: " +
-        escapeHtml(
-          data.settings.nagadNumber
-        )
-      );
-
-    }
-
-
-    if (
-      data.settings.rocketEnabled &&
-      data.settings.rocketNumber
-    ) {
-
-      methods.push(
-        "📱 Rocket: " +
-        escapeHtml(
-          data.settings.rocketNumber
-        )
-      );
-
-    }
-
-
-    if (methods.length) {
-
-      paymentInfo = `
-
-        <div
-          style="
-            margin-top:12px;
-            padding:10px;
-            border:1px solid #ddd;
-            border-radius:8px;
-          "
-        >
-
-          <b>
-            💳 Advance Payment Numbers
-          </b>
-
-          ${methods
-            .map(
-              function(method) {
-
-                return `
-                  <p style="margin:6px 0;">
-                    ${method}
-                  </p>
-                `;
-
-              }
-            )
-            .join("")}
-
-        </div>
-
-      `;
-
-    }
-
-  }
-
-
-  document.getElementById(
-    "summaryBox"
-  ).innerHTML = `
 
     <h3>
-      🛍️ Order Summary
+      ${escapeHtml(
+        currentProduct.name
+      )}
     </h3>
 
+    <p>
+      Price:
+      <strong>
+        ৳${currentProduct.price}
+      </strong>
+    </p>
 
-    <div class="row">
+    ${
+      currentProduct.colors.length
+        ? `
+          <div>
+            <strong>🎨 Color:</strong>
 
-      <span>
+            <div id="colorOptions"
+                 class="option-group">
 
-        ${escapeHtml(
-          product.name
-        )}
-        ×
-        ${quantity}
+              ${currentProduct.colors
+                .map(function(color, index) {
 
-      </span>
+                  return `
+                    <button
+                      type="button"
+                      class="option color-option ${
+                        index === 0
+                          ? "selected"
+                          : ""
+                      }"
+                      data-color="${escapeHtml(color)}"
+                      onclick="selectColor(this)"
+                    >
+                      ${escapeHtml(color)}
+                    </button>
+                  `;
+
+                }).join("")}
+
+            </div>
+          </div>
+        `
+        : ""
+    }
 
 
-      <b>
+    ${
+      currentProduct.sizes.length
+        ? `
+          <div>
+            <strong>📏 Size:</strong>
 
-        ${money(
-          Number(
-            product.price
-          ) *
-          quantity
-        )}
+            <div id="sizeOptions"
+                 class="option-group">
 
-      </b>
+              ${currentProduct.sizes
+                .map(function(size, index) {
+
+                  return `
+                    <button
+                      type="button"
+                      class="option size-option ${
+                        index === 0
+                          ? "selected"
+                          : ""
+                      }"
+                      data-size="${escapeHtml(size)}"
+                      onclick="selectSize(this)"
+                    >
+                      ${escapeHtml(size)}
+                    </button>
+                  `;
+
+                }).join("")}
+
+            </div>
+          </div>
+        `
+        : ""
+    }
+
+
+    <div style="margin-top:15px">
+
+      <strong>
+        Quantity:
+      </strong>
+
+      <div
+        style="
+          display:flex;
+          align-items:center;
+          gap:10px;
+          margin-top:8px;
+        "
+      >
+
+        <button
+          type="button"
+          onclick="changeQty(-1)"
+        >
+          −
+        </button>
+
+        <strong id="qtyValue">
+          1
+        </strong>
+
+        <button
+          type="button"
+          onclick="changeQty(1)"
+        >
+          +
+        </button>
+
+      </div>
 
     </div>
-
-
-    ${optionsText}
-
-
-    ${paymentInfo}
 
   `;
 
 
-  document.getElementById(
-    "shipCharge"
-  ).textContent =
-    money(
-      data.settings.shipping
+  const ship =
+    Number(
+      getData().settings?.shipping || 0
     );
 
-
-  document.getElementById(
-    "warningText"
-  ).textContent =
-    data.settings.warning ||
-    "";
-
-
-  const codRadio =
-    document.querySelector(
-      'input[name="payment"][value="COD"]'
+  const shipElement =
+    document.getElementById(
+      "shipCharge"
     );
 
-
-  const advanceRadio =
-    document.querySelector(
-      'input[name="payment"][value="Advance"]'
-    );
-
-
-  if (codRadio) {
-
-    codRadio.parentElement.style.display =
-      data.settings.cod
-        ? "block"
-        : "none";
-
-
-    codRadio.checked =
-      data.settings.cod;
-
+  if (shipElement) {
+    shipElement.textContent =
+      "৳" + ship;
   }
 
 
-  if (advanceRadio) {
+  modal.classList.remove(
+    "hidden"
+  );
 
-    advanceRadio.parentElement.style.display =
-      data.settings.advance
-        ? "block"
-        : "none";
+  updatePaymentInfo();
 
-
-    if (
-      !data.settings.cod &&
-      data.settings.advance
-    ) {
-
-      advanceRadio.checked =
-        true;
-
-    }
-
-  }
-
-
-  document.getElementById(
-    "cName"
-  ).value = "";
-
-
-  document.getElementById(
-    "cPhone"
-  ).value = "";
-
-
-  document.getElementById(
-    "cAddress"
-  ).value = "";
-
-
-  document.getElementById(
-    "confirmCheck"
-  ).checked =
-    false;
-
-
-  toggleConfirm();
-
-
-  document
-    .getElementById(
-      "checkoutModal"
-    )
-    .classList
-    .remove("hidden");
-
+  updateTotal();
 }
 
-
-
-/* =========================
-   CLOSE
-========================= */
 
 function closeCheckout() {
 
-  document
-    .getElementById(
+  const modal =
+    document.getElementById(
       "checkoutModal"
-    )
-    .classList
-    .add("hidden");
+    );
 
+  if (modal) {
+    modal.classList.add(
+      "hidden"
+    );
+  }
 }
 
 
+/* =========================
+   COLOR / SIZE
+========================= */
+
+function selectColor(button) {
+
+  selectedColor =
+    button.dataset.color || "";
+
+  document
+    .querySelectorAll(
+      ".color-option"
+    )
+    .forEach(function(btn) {
+
+      btn.classList.remove(
+        "selected"
+      );
+
+    });
+
+  button.classList.add(
+    "selected"
+  );
+}
+
+
+function selectSize(button) {
+
+  selectedSize =
+    button.dataset.size || "";
+
+  document
+    .querySelectorAll(
+      ".size-option"
+    )
+    .forEach(function(btn) {
+
+      btn.classList.remove(
+        "selected"
+      );
+
+    });
+
+  button.classList.add(
+    "selected"
+  );
+}
+
 
 /* =========================
-   CONFIRM CHECKBOX
+   QUANTITY
+========================= */
+
+function changeQty(change) {
+
+  selectedQty += change;
+
+  if (selectedQty < 1) {
+    selectedQty = 1;
+  }
+
+  if (selectedQty > 20) {
+    selectedQty = 20;
+  }
+
+  const qty =
+    document.getElementById(
+      "qtyValue"
+    );
+
+  if (qty) {
+    qty.textContent =
+      selectedQty;
+  }
+
+  updateTotal();
+}
+
+
+/* =========================
+   TOTAL
+========================= */
+
+function updateTotal() {
+
+  if (!currentProduct) return;
+
+  const shipping =
+    Number(
+      getData().settings?.shipping || 0
+    );
+
+  const productTotal =
+    currentProduct.price *
+    selectedQty;
+
+  const total =
+    productTotal +
+    shipping;
+
+  const totalElement =
+    document.getElementById(
+      "orderTotal"
+    );
+
+  if (totalElement) {
+
+    totalElement.textContent =
+      "৳" + total;
+
+  }
+}
+
+
+/* =========================
+   PAYMENT INFO
+========================= */
+
+function updatePaymentInfo() {
+
+  const data = getData();
+  const s = data.settings || {};
+
+  let box =
+    document.getElementById(
+      "paymentNumbers"
+    );
+
+  if (!box) {
+
+    const paymentBox =
+      document.querySelector(
+        'input[name="payment"]'
+      )?.closest(".box");
+
+    if (!paymentBox) return;
+
+    box =
+      document.createElement("div");
+
+    box.id =
+      "paymentNumbers";
+
+    box.style.marginTop =
+      "12px";
+
+    paymentBox.appendChild(box);
+  }
+
+
+  box.innerHTML = `
+
+    <div
+      style="
+        border:1px solid #ddd;
+        padding:10px;
+        border-radius:8px;
+        background:#fafafa;
+      "
+    >
+
+      <strong>
+        💳 Advance Payment Numbers
+      </strong>
+
+      ${
+        s.bkashNumber
+          ? `
+            <p>
+              <b>bKash:</b>
+              ${escapeHtml(
+                s.bkashNumber
+              )}
+            </p>
+          `
+          : ""
+      }
+
+      ${
+        s.nagadNumber
+          ? `
+            <p>
+              <b>Nagad:</b>
+              ${escapeHtml(
+                s.nagadNumber
+              )}
+            </p>
+          `
+          : ""
+      }
+
+      ${
+        s.rocketNumber
+          ? `
+            <p>
+              <b>Rocket:</b>
+              ${escapeHtml(
+                s.rocketNumber
+              )}
+            </p>
+          `
+          : ""
+      }
+
+    </div>
+
+  `;
+}
+
+
+/* =========================
+   CONFIRM BUTTON
 ========================= */
 
 function toggleConfirm() {
@@ -1160,18 +776,16 @@ function toggleConfirm() {
       "confirmCheck"
     );
 
-
   const button =
     document.getElementById(
       "confirmBtn"
     );
 
+  if (!checkbox || !button) return;
 
   button.disabled =
     !checkbox.checked;
-
 }
-
 
 
 /* =========================
@@ -1180,322 +794,254 @@ function toggleConfirm() {
 
 function submitOrder() {
 
-  const data =
-    getData();
-
-
-  if (!selectedProduct) {
+  if (!currentProduct) {
 
     alert(
-      "Please select a product."
+      "Product পাওয়া যায়নি।"
     );
 
     return;
-
   }
-
-
-  /*
-    COLOR ONLY IF PRODUCT HAS COLOR
-  */
-
-  if (
-    selectedProduct.colors &&
-    selectedProduct.colors.length &&
-    !selectedColor
-  ) {
-
-    alert(
-      "Please select a color."
-    );
-
-    return;
-
-  }
-
-
-  /*
-    SIZE ONLY IF PRODUCT HAS SIZE
-  */
-
-  if (
-    selectedProduct.sizes &&
-    selectedProduct.sizes.length &&
-    !selectedSize
-  ) {
-
-    alert(
-      "Please select a size."
-    );
-
-    return;
-
-  }
-
 
   const name =
-    document
-      .getElementById(
-        "cName"
-      )
-      .value
-      .trim();
-
+    document.getElementById(
+      "cName"
+    )?.value.trim();
 
   const phone =
-    document
-      .getElementById(
-        "cPhone"
-      )
-      .value
-      .trim();
-
+    document.getElementById(
+      "cPhone"
+    )?.value.trim();
 
   const address =
-    document
-      .getElementById(
-        "cAddress"
-      )
-      .value
-      .trim();
+    document.getElementById(
+      "cAddress"
+    )?.value.trim();
 
-
-  if (
-    !name ||
-    !phone ||
-    !address
-  ) {
-
-    alert(
-      "Please fill Customer Name, Mobile Number and Address."
+  const checkbox =
+    document.getElementById(
+      "confirmCheck"
     );
 
+  if (!name) {
+    alert(
+      "Customer Name দিন।"
+    );
     return;
-
   }
 
-
-  const paymentElement =
-    document.querySelector(
-      'input[name="payment"]:checked'
-    );
-
-
-  if (!paymentElement) {
-
+  if (!phone) {
     alert(
-      "Please select a payment method."
+      "Mobile Number দিন।"
     );
-
     return;
+  }
 
+  if (!address) {
+    alert(
+      "Full Delivery Address দিন।"
+    );
+    return;
+  }
+
+  if (!checkbox?.checked) {
+    alert(
+      "Order confirmation checkbox দিন।"
+    );
+    return;
   }
 
 
   const payment =
-    paymentElement.value;
-
-
-  if (
-    payment === "COD" &&
-    !data.settings.cod
-  ) {
-
-    alert(
-      "Cash on Delivery is currently unavailable."
-    );
-
-    return;
-
-  }
-
-
-  if (
-    payment === "Advance" &&
-    !data.settings.advance
-  ) {
-
-    alert(
-      "Advance payment is currently unavailable."
-    );
-
-    return;
-
-  }
+    document.querySelector(
+      'input[name="payment"]:checked'
+    )?.value || "COD";
 
 
   const shipping =
     Number(
-      data.settings.shipping ||
-      0
+      getData().settings?.shipping || 0
     );
-
 
   const productTotal =
-    Number(
-      selectedProduct.price
-    ) *
-    Number(
-      selectedProduct.qty
-    );
-
+    currentProduct.price *
+    selectedQty;
 
   const total =
     productTotal +
     shipping;
 
 
-  const orders =
-    JSON.parse(
-      localStorage.getItem(
-        "afh_orders"
-      ) ||
-      "[]"
-    );
-
-
-  let paymentNumber =
-    "";
-
-
-  /*
-    Save first available
-    advance payment number
-  */
-
-  if (
-    payment === "Advance"
-  ) {
-
-    if (
-      data.settings.bkashEnabled &&
-      data.settings.bkashNumber
-    ) {
-
-      paymentNumber =
-        data.settings.bkashNumber;
-
-    } else if (
-      data.settings.nagadEnabled &&
-      data.settings.nagadNumber
-    ) {
-
-      paymentNumber =
-        data.settings.nagadNumber;
-
-    } else if (
-      data.settings.rocketEnabled &&
-      data.settings.rocketNumber
-    ) {
-
-      paymentNumber =
-        data.settings.rocketNumber;
-
-    }
-
-  }
-
-
-  const newOrder = {
+  const order = {
 
     id:
       "AFH-" +
       Date.now(),
 
-
     date:
-      new Date()
-        .toLocaleString(),
-
+      new Date().toLocaleString(),
 
     name,
 
-
     phone,
-
 
     address,
 
-
     product:
-      selectedProduct.name,
+      currentProduct.name,
 
+    productName:
+      currentProduct.name,
+
+    productImage:
+      currentProduct.image,
+
+    productId:
+      currentProduct.id,
 
     qty:
-      selectedProduct.qty,
+      selectedQty,
 
+    quantity:
+      selectedQty,
 
     color:
       selectedColor,
 
-
     size:
       selectedSize,
 
-
     price:
-      selectedProduct.price,
-
-
-    shipping,
-
+      currentProduct.price,
 
     productTotal,
 
+    shipping,
 
     total,
 
-
     payment,
-
-
-    paymentNumber,
-
 
     status:
       "Pending",
 
-
-    image:
-      selectedProduct.image ||
-      "",
-
-
     source:
-      new URLSearchParams(
-        window.location.search
-      ).get("source") ||
-      "Website"
+      "Direct Website"
 
   };
 
 
-  orders.unshift(
-    newOrder
-  );
+  let orders = [];
+
+  try {
+
+    orders =
+      JSON.parse(
+        localStorage.getItem(
+          ORDER_KEY
+        )
+      ) || [];
+
+  } catch (error) {
+
+    orders = [];
+
+  }
+
+
+  if (!Array.isArray(orders)) {
+    orders = [];
+  }
+
+
+  orders.push(order);
 
 
   localStorage.setItem(
-    "afh_orders",
-    JSON.stringify(
-      orders
-    )
+    ORDER_KEY,
+    JSON.stringify(orders)
   );
 
 
   alert(
-    "✅ Order submitted successfully!\n\n" +
-    "Order ID: " +
-    newOrder.id
+    "✅ আপনার order successfully placed হয়েছে!"
   );
 
 
   closeCheckout();
 
 
-  /*
-    Reset AFTER successful order
-  */
+  const formFields = [
+    "cName",
+    "cPhone",
+    "cAddress"
+  ];
 
-  selectedProduct =
-  
+  formFields.forEach(
+    function(id) {
+
+      const field =
+        document.getElementById(id);
+
+      if (field) {
+        field.value = "";
+      }
+
+    }
+  );
+
+
+  const check =
+    document.getElementById(
+      "confirmCheck"
+    );
+
+  if (check) {
+    check.checked = false;
+  }
+
+
+  const btn =
+    document.getElementById(
+      "confirmBtn"
+    );
+
+  if (btn) {
+    btn.disabled = true;
+  }
+
+}
+
+
+/* =========================
+   START
+========================= */
+
+document.addEventListener(
+  "DOMContentLoaded",
+  function() {
+
+    loadSettings();
+
+    renderProducts();
+
+    setupCategories();
+
+    const paymentRadios =
+      document.querySelectorAll(
+        'input[name="payment"]'
+      );
+
+    paymentRadios.forEach(
+      function(radio) {
+
+        radio.addEventListener(
+          "change",
+          updatePaymentInfo
+        );
+
+      }
+    );
+
+  }
+);
